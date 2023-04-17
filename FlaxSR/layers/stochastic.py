@@ -51,4 +51,3 @@ class DropPathFast(nn.Module):
                     residual = jnp.zeros_like(inputs)
 
                 return inputs + residual
-

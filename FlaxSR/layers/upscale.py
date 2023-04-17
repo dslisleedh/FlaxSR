@@ -50,11 +50,11 @@ class NearestConv(nn.Module):
             'nearest_conv', 'kernel', lambda: _nearest_conv_init(input_c, out_c, self.scale)
         )
 
-        output = lax.conv_general_dilated(
+        outputs = lax.conv_general_dilated(
             inputs, nc_kernel, (1, 1), 'VALID',
             dimension_numbers=('NHWC', 'HWIO', 'NHWC'),
         )
         if self.return_upscaled:
-            return _pixel_shuffle(output, self.scale)
+            return _pixel_shuffle(outputs, self.scale)
         else:
-            return output
+            return outputs

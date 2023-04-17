@@ -4,6 +4,12 @@ Super Resolution models with Jax/Flax
 
 ## HOW TO USE
 
+### Install
+```shell
+pip install flaxsr
+```
+
+### Usage
 ```python
 from FlaxSR.models import VDSR
 import jax
@@ -17,8 +23,18 @@ outputs = model.apply(params, inputs)
 print(outputs.shape)
 ```
 
-## Feats will be added
+## Models implemented
+ - SRCNN
+ - FSRCNN
+ - ESPCN
+ - VDSR
+ - EDSR, MDSR,
+ - NCNet
+ - SRResNet(SRGAN will be implemented in future)
+ - NAFSSR
 
- - [ ] More models
- - [ ] Pre-trained parameters
- - [ ] Training states(includes Generative-sr models)
+## Feats will be added in future
+
+ - More models
+ - Pre-trained parameters
+ - Training states(includes Generative-sr models)
