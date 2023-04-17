@@ -94,10 +94,10 @@ class SCAM(nn.Module):
 class NAFBlockSR(nn.Module):
     fusion: bool
     tlsc_patch_size: Sequence[int]
-    dw_expansion_ratio: int = 2
-    ffn_expansion_ratio: int = 2
     attn_scale: float
     survival_prob: float
+    dw_expansion_ratio: int = 2
+    ffn_expansion_ratio: int = 2
 
     def setup(self):
         self.block = NAFBlock(self.tlsc_patch_size, self.dw_expansion_ratio, self.ffn_expansion_ratio)
@@ -129,11 +129,11 @@ class NAFSSR(nn.Module):
     n_filters: int
     n_blocks: int
     train_patch_size: Sequence[int]
-    dw_expansion_ratio: int = 2
-    ffn_expansion_ratio: int = 2
     attn_scale: float
     drop_rate: float
     scale: int
+    dw_expansion_ratio: int = 2
+    ffn_expansion_ratio: int = 2
     fusion_from: int = -1
     fusion_to: int = 1000
     tlsc_ratio: float = 1.5
@@ -160,11 +160,15 @@ class NAFSSR(nn.Module):
         is_ndarray = isinstance(inputs, jnp.ndarray)
         if is_ndarray:
             inputs = [inputs]
-
+        shape = inputs[0].shape
+        inputs_skip = [
+            jax.image.resize(i, (shape[0], shape[1] * self.scale, shape[2] * self.scale, shape[3]), method='bilinear')
+            for i in inputs
+        ]  # FIXME: is list comprehension works well in jit-compiled function??
         feats = [self.intro(f, training=training) for f in inputs]
         feats = self.middles(feats, training=training)
-        feats = [self.end(f, training=training) for f in feats]
+        outputs = [self.end(f, training=training) for f in feats]
         if is_ndarray:
-            return feats[0]
+            return outputs[0] + inputs_skip[0]
         else:
-            return feats
+            return [o + s for o, s in zip(outputs, inputs_skip)]
