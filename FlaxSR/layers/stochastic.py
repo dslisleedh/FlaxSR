@@ -22,7 +22,8 @@ class DropPath(nn.Module):
                 return skip
 
             key = self.make_rng('DropPath')
-            survival_state = jax.random.bernoulli(key, self.survival_prob, skip.shape)
+            shape = [s if i == 0 else 1 for i, s in enumerate(skip.shape)]
+            survival_state = jax.random.bernoulli(key, self.survival_prob, shape)
             return jnp.where(survival_state, (skip + residual) / self.survival_prob, skip)
 
         else:
