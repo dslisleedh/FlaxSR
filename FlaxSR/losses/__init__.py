@@ -5,8 +5,12 @@ from .pixel_wise_losses import (
 )
 from .perceptual_losses import (
     vgg_loss as vgg_loss,
+)
+from .utils import (
     check_vgg_params_exists as check_vgg_params_exists,
+    load_vgg19_params as load_vgg19_params,
 )
 
 
 check_vgg_params_exists()
+del check_vgg_params_exists

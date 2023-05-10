@@ -29,5 +29,3 @@ def charbonnier_loss(
 ) -> jnp.ndarray:
     loss = jnp.sqrt(jnp.square(hr - sr) + eps ** 2)
     return reduce_fn(loss, mode)
-
-
