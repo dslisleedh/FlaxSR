@@ -11,7 +11,10 @@ import einops
 from functools import partial
 from typing import Sequence, Literal
 
+from flaxsr._utils import register
 
+
+@register('models', 'vdsr')
 class VDSR(nn.Module):
     n_filters: int
     n_blocks: int

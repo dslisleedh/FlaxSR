@@ -11,7 +11,8 @@ import einops
 from functools import partial
 from typing import Sequence, Literal, Optional
 
-from FlaxSR.layers import PixelShuffle
+from flaxsr.layers import PixelShuffle
+from flaxsr._utils import register
 
 
 """
@@ -33,6 +34,7 @@ class ResBlock(nn.Module):
         return inputs + residual
 
 
+@register('models', 'srresnet')
 class SRResNet(nn.Module):
     n_filters: int
     n_blocks: int

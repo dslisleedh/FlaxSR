@@ -1,3 +1,4 @@
+
 # FlaxSR
 
 Super Resolution models with Jax/Flax
@@ -10,8 +11,9 @@ pip install flaxsr
 ```
 
 ### Usage
+
 ```python
-from FlaxSR.models import VDSR
+from flaxsr.models import VDSR
 import jax
 import jax.numpy as jnp
 

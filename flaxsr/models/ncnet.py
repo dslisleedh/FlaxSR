@@ -11,9 +11,11 @@ import einops
 from functools import partial
 from typing import Sequence, Literal
 
-from FlaxSR.layers import PixelShuffle, NearestConv
+from flaxsr.layers import PixelShuffle, NearestConv
+from flaxsr._utils import register
 
 
+@register('models', 'ncnet')
 class NCNet(nn.Module):
     n_filters: int
     n_blocks: int

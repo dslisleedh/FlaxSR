@@ -11,7 +11,8 @@ import einops
 from functools import partial
 from typing import Sequence, Literal
 
-from FlaxSR.layers import PixelShuffle
+from flaxsr.layers import PixelShuffle
+from flaxsr._utils import register
 
 
 class ResBlock(nn.Module):
@@ -46,6 +47,7 @@ class Upscale(nn.Module):
         return inputs
 
 
+@register('models', 'edsr')
 class EDSR(nn.Module):
     n_filters: int
     n_blocks: int
@@ -79,6 +81,7 @@ class Preprocessing(nn.Module):
         return inputs
 
 
+@register('models', 'mdsr')
 class MDSR(nn.Module):
     n_filters: int
     n_blocks: int

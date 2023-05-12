@@ -11,7 +11,10 @@ import einops
 from functools import partial
 from typing import Sequence, Literal
 
+from flaxsr._utils import register
 
+
+@register('models', 'fsrcnn')
 class FSRCNN(nn.Module):
     """
     Original paper only upscale Y channel of YCbCr image.

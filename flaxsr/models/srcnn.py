@@ -11,7 +11,10 @@ import einops
 from functools import partial
 from typing import Sequence, Literal
 
+from flaxsr._utils import register
 
+
+@register('models', 'srcnn')
 class SRCNN(nn.Module):
     """
     I fixed n_layers as 3 and kernel_size as 9, 1, 5.

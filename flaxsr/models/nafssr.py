@@ -11,7 +11,8 @@ import einops
 from functools import partial
 from typing import Sequence, Literal, Optional
 
-from FlaxSR.layers import PixelShuffle, DropPathFast
+from flaxsr.layers import PixelShuffle
+from flaxsr._utils import register
 
 
 def _simple_gate(inputs: jnp.ndarray) -> jnp.ndarray:
@@ -125,6 +126,7 @@ class NAFBlockSR(nn.Module):
                 return feats
 
 
+@register('models', 'nafssr')
 class NAFSSR(nn.Module):
     n_filters: int
     n_blocks: int

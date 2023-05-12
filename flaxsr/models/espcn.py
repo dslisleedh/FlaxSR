@@ -11,9 +11,11 @@ import einops
 from functools import partial
 from typing import Sequence, Literal
 
-from FlaxSR.layers import PixelShuffle
+from flaxsr.layers import PixelShuffle
+from flaxsr._utils import register
 
 
+@register('models', 'espcn')
 class ESPCN(nn.Module):
     n_filters: Sequence[int]
     kernel_size: Sequence[int]

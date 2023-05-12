@@ -11,7 +11,8 @@ import einops
 from functools import partial
 from typing import Sequence, Literal
 
-from FlaxSR.losses.utils import reduce_fn
+from flaxsr.losses.utils import reduce_fn
+from flaxsr._utils import register
 
 
 """
@@ -50,6 +51,7 @@ def _get_feats_from_vgg19(x: jnp.ndarray, params: Pytree, feats_from: Sequence[i
     return outputs
 
 
+@register('losses', 'vgg')
 def vgg_loss(
         hr: jnp.ndarray, sr: jnp.ndarray, vgg_params: Pytree,
         feats_from: Sequence[int], before_act: bool = False, mode: Literal['mean', 'sum', None] = 'mean'
