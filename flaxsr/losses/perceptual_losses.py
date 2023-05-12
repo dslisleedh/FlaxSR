@@ -51,11 +51,10 @@ def _get_feats_from_vgg19(x: jnp.ndarray, params: Pytree, feats_from: Sequence[i
     return outputs
 
 
-@register('losses', 'vgg')
 def vgg_loss(
         hr: jnp.ndarray, sr: jnp.ndarray, vgg_params: Pytree,
         feats_from: Sequence[int], before_act: bool = False, mode: Literal['mean', 'sum', None] = 'mean'
-):
+) -> jnp.ndarray:
     hr_feats = _get_feats_from_vgg19(hr, vgg_params, feats_from, before_act)
     sr_feats = _get_feats_from_vgg19(sr, vgg_params, feats_from, before_act)
 
@@ -64,3 +63,16 @@ def vgg_loss(
         loss += jnp.mean((hr_feat - sr_feat) ** 2, axis=(1, 2, 3))
 
     return reduce_fn(loss, mode)
+
+
+@register('losses', 'vgg')
+class VGGLoss:
+    def __init__(
+            self, feats_from: Sequence[int], before_act: bool = False, mode: Literal['mean', 'sum', None] = 'mean'
+    ):
+        self.feats_from = feats_from
+        self.before_act = before_act
+        self.mode = mode
+
+    def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, vgg_params: Pytree) -> jnp.ndarray:
+        return vgg_loss(hr, sr, vgg_params, self.feats_from, self.before_act, self.mode)

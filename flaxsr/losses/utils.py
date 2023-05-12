@@ -9,21 +9,24 @@ import numpy as np
 import einops
 
 from functools import partial
-from typing import Sequence, Literal
+from typing import Sequence, Literal, Any
 
 import os
 import pickle
 
 
-def reduce_fn(loss, mode: Literal['sum', 'mean', None]) -> jnp.ndarray:
-    if mode == 'sum':
+loss_wrapper = Any
+
+
+def reduce_fn(loss, reduce: Literal['sum', 'mean', None]) -> jnp.ndarray:
+    if reduce == 'sum':
         return jnp.sum(loss)
-    elif mode == 'mean':
+    elif reduce == 'mean':
         return jnp.mean(loss)
-    elif mode is None:
+    elif reduce is None:
         return loss
     else:
-        raise ValueError(f"Invalid reduce mode, got {mode}. Must be ['sum', 'mean', None]")
+        raise ValueError(f"Invalid reduce mode, got {reduce}. Must be ['sum', 'mean', None]")
 
 
 def _get_package_dir():
@@ -53,3 +56,18 @@ def load_vgg19_params():
     dir_path = _get_package_dir()
     params = pickle.load(open(os.path.join(dir_path, 'vgg19_weights.pkl'), 'rb'))
     return params
+
+
+def get_loss_wrapper(losses: Sequence, weights: Sequence) -> loss_wrapper:
+    assert len(losses) == len(weights), \
+        f"Number of losses and weights must be equal, got {len(losses)} and {len(weights)}"
+    return [(loss, weight) for loss, weight in zip(losses, weights)]
+
+
+def compute_loss(
+        hr: jnp.ndarray, sr: jnp.ndarray, losses: loss_wrapper, mode: Literal['sum', 'mean', None] = 'sum'
+) -> jnp.ndarray:
+    loss = 0.
+    for loss_fn, weight in losses:
+        loss = loss + (reduce_fn(loss_fn(hr, sr), mode) * weight)
+    return loss
