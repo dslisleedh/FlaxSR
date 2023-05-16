@@ -4,6 +4,7 @@ import jax.numpy as jnp
 
 import flax
 import flax.linen as nn
+from flaxsr._utils import register
 
 import numpy as np
 import einops
@@ -12,6 +13,7 @@ from functools import partial
 from typing import Sequence, Literal
 
 
+@register('layers', 'droppath')
 class DropPath(nn.Module):
     survival_prob: float
 
@@ -30,6 +32,7 @@ class DropPath(nn.Module):
             return skip + residual
 
 
+@register('layers', 'droppath_fast')
 class DropPathFast(nn.Module):
     module: nn.Module
     survival_prob: float

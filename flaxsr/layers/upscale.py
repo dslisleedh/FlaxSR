@@ -4,6 +4,7 @@ import jax.numpy as jnp
 
 import flax
 import flax.linen as nn
+from flaxsr._utils import register
 
 import numpy as np
 import einops
@@ -28,6 +29,7 @@ def _nearest_conv_init(input_c: int, out_c: int, scale: int) -> jnp.ndarray:
     return kernel
 
 
+@register('layers', 'pixelshuffle')
 class PixelShuffle(nn.Module):
     scale: int
 
@@ -36,6 +38,7 @@ class PixelShuffle(nn.Module):
         return _pixel_shuffle(inputs, self.scale)
 
 
+@register('layers', 'nearestconv')
 class NearestConv(nn.Module):
     scale: int
     out_c: Optional[int] = None
