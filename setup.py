@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="flaxsr",
-    version="0.0.2b",
+    version="0.0.3",
     author="dslisleedh",
     author_email="dslisleedh@gmail.com",
     description="Super Resolution models with Jax/Flax",
