@@ -77,7 +77,7 @@ def ls_generator_loss(
         fake: jnp.ndarray, mode: Literal['mean', 'sum', None] = 'mean',
         *args, **kwargs
 ):
-    loss = .5 * jnp.square(fake)
+    loss = .5 * jnp.square(fake - 1.)
 
     return reduce_fn(loss, mode)
 
@@ -104,10 +104,10 @@ def relativistic_discriminator_loss(
         true: jnp.ndarray, fake: jnp.ndarray, mode: Literal['mean', 'sum', None] = 'mean',
         *args, **kwargs
 ):
-    real_loss = -jax.nn.log_sigmoid(true - jnp.mean(fake))
-    fake_loss = jax.nn.log_sigmoid(fake - jnp.mean(true))
+    true_loss = -jax.nn.log_sigmoid(true - jnp.mean(fake))
+    fake_loss = -jax.nn.log_sigmoid(-fake + jnp.mean(true))
 
-    loss = real_loss + fake_loss
+    loss = true_loss + fake_loss
     return reduce_fn(loss, mode)
 
 
@@ -115,10 +115,10 @@ def relativistic_generator_loss(
         true: jnp.ndarray, fake: jnp.ndarray, mode: Literal['mean', 'sum', None] = 'mean',
         *args, **kwargs
 ):
-    real_loss = jax.nn.log_sigmoid(true - jnp.mean(fake))
+    true_loss = -jax.nn.log_sigmoid(-true + jnp.mean(fake))
     fake_loss = -jax.nn.log_sigmoid(fake - jnp.mean(true))
 
-    loss = real_loss + fake_loss
+    loss = true_loss + fake_loss
     return reduce_fn(loss, mode)
 
 
