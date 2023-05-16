@@ -60,7 +60,6 @@ def vgg_loss(
     for i, (hr_feats, sr_feats) in enumerate(zip(hr_feats, sr_feats)):
         if i in feats_from:
             loss += jnp.mean((hr_feats - sr_feats) ** 2, axis=(1, 2, 3))
-            print(1)
     return reduce_fn(loss, mode)
 
 
