@@ -14,6 +14,8 @@ from typing import Sequence, Literal, Any
 import os
 import pickle
 
+from flaxsr._utils import get
+
 
 loss_wrapper = Any
 
@@ -46,7 +48,11 @@ def check_vgg_params_exists():
         weights = []
         for layer in vgg19.layers:
             if isinstance(layer, tf.keras.layers.Conv2D):
-                weights.append((jnp.asarray(layer.weights[0].numpy()), jnp.asarray(layer.weights[1].numpy())))
+                weights.append(
+                    (
+                        jnp.asarray(layer.weights[0].numpy()),
+                        jnp.asarray(layer.weights[1].numpy())[jnp.newaxis, jnp.newaxis, jnp.newaxis, ...])
+                )
         with open(os.path.join(dir_path, 'vgg19_weights.pkl'), 'wb') as f:
             pickle.dump(weights, f)
         print('Done !')
@@ -58,10 +64,10 @@ def load_vgg19_params():
     return params
 
 
-def get_loss_wrapper(losses: Sequence, weights: Sequence) -> loss_wrapper:
+def get_loss_wrapper(losses: Sequence[str], weights: Sequence[float]) -> loss_wrapper:
     assert len(losses) == len(weights), \
         f"Number of losses and weights must be equal, got {len(losses)} and {len(weights)}"
-    return [(loss, weight) for loss, weight in zip(losses, weights)]
+    return [(get('losses', loss), float(weight)) for loss, weight in zip(losses, weights)]
 
 
 def compute_loss(
