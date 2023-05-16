@@ -23,7 +23,7 @@ jax.config.parse_flags_with_absl()
 
 check_vgg_params_exists()
 search_space = {
-    'feats_from': [[16], [0], [2, 5, 6], [6, 8, 14]],
+    'feats_from': [(16,), (0,), (2, 5, 6), (6, 8, 14)],
     'before_act': [True, False],
     'mode': ['mean', 'sum', None]
 }
