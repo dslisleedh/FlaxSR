@@ -62,7 +62,7 @@ class MinmaxGeneratorLoss:
         return minmax_generator_loss(fake, self.mode, self.from_logits)
 
 
-def ls_discriminator_loss(
+def least_square_discriminator_loss(
         true: jnp.ndarray, fake: jnp.ndarray, mode: Literal['mean', 'sum', None] = 'mean',
         *args, **kwargs
 ):
@@ -73,7 +73,7 @@ def ls_discriminator_loss(
     return reduce_fn(loss, mode)
 
 
-def ls_generator_loss(
+def least_square_generator_loss(
         fake: jnp.ndarray, mode: Literal['mean', 'sum', None] = 'mean',
         *args, **kwargs
 ):
@@ -82,22 +82,22 @@ def ls_generator_loss(
     return reduce_fn(loss, mode)
 
 
-@register('losses', 'ls_discriminator')
-class LSDiscriminatorLoss:
+@register('losses', 'least_square_discriminator')
+class LeastSquareDiscriminatorLoss:
     def __init__(self, mode: Literal['mean', 'sum', None] = 'mean'):
         self.mode = mode
 
     def __call__(self, true: jnp.ndarray, fake: jnp.ndarray):
-        return ls_discriminator_loss(true, fake, self.mode)
+        return least_square_discriminator_loss(true, fake, self.mode)
 
 
-@register('losses', 'ls_generator')
-class LSGeneratorLoss:
+@register('losses', 'least_square_generator')
+class LeastSquareGeneratorLoss:
     def __init__(self, mode: Literal['mean', 'sum', None] = 'mean'):
         self.mode = mode
 
     def __call__(self, fake: jnp.ndarray):
-        return ls_generator_loss(fake, self.mode)
+        return least_square_generator_loss(fake, self.mode)
 
 
 def relativistic_discriminator_loss(

@@ -9,7 +9,7 @@ import numpy as np
 import einops
 
 from functools import partial
-from typing import Sequence, Literal, Any
+from typing import Sequence, Literal, Any, Optional
 
 import os
 import pickle
@@ -71,9 +71,16 @@ def get_loss_wrapper(losses: Sequence[str], weights: Sequence[float]) -> loss_wr
 
 
 def compute_loss(
-        hr: jnp.ndarray, sr: jnp.ndarray, losses: loss_wrapper, mode: Literal['sum', 'mean', None] = 'sum'
+        hr: jnp.ndarray, sr: jnp.ndarray, losses: loss_wrapper, mode: Literal['sum', 'mean', None] = 'sum',
+        mask: Optional[jnp.ndarray] = None
 ) -> jnp.ndarray:
-    loss = 0.
+    loss = jnp.zeros(())
+
+    if mask is not None:
+        hr = hr * mask
+        sr = sr * mask
+
     for loss_fn, weight in losses:
-        loss = loss + (reduce_fn(loss_fn(hr, sr), mode) * weight)
+        loss += weight * reduce_fn(loss_fn(hr, sr), mode)
+
     return loss
