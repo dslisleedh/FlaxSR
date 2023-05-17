@@ -47,8 +47,8 @@ sr = jnp.asarray(np.random.normal((16, 256, 256, 3)))
 loss = flaxsr.losses.l1_loss(hr, sr, "mean")
 
 # Or you can use flaxsr.get function
-metric = flaxsr.get("losses", "l1")
-loss_get = metric(hr, sr, "mean")
+metric = flaxsr.get("losses", "l1", "mean")
+loss_get = metric(hr, sr)
 
 np.allclose(loss, loss_get)
 ```
