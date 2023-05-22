@@ -9,8 +9,8 @@ from .perceptual_losses import (
 from .adversarial_losses import (
     minmax_discriminator_loss as minmax_discriminator_loss,
     minmax_generator_loss as minmax_generator_loss,
-    ls_discriminator_loss as ls_discriminator_loss,
-    ls_generator_loss as ls_generator_loss,
+    least_square_discriminator_loss as least_square_discriminator_loss,
+    least_square_generator_loss as least_square_generator_loss,
     relativistic_discriminator_loss as relativistic_discriminator_loss,
     relativistic_generator_loss as relativistic_generator_loss,
 )
