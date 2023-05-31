@@ -72,13 +72,13 @@ def load_vgg19_params():
 
 
 def get_loss_wrapper(
-        losses: Sequence[str], weights: Sequence[float], modes: str | Reduces | Sequence[str | Reduces] = 'mean'
+        losses: Sequence[str], weights: Sequence[float], reduces: str | Reduces | Sequence[str | Reduces] = 'mean'
 ) -> loss_wrapper:
     assert len(losses) == len(weights), \
         f"Number of losses and weights must be equal, got {len(losses)} and {len(weights)}"
-    if isinstance(modes, str | Reduces):
-        modes = [modes] * len(losses)
-    return [(get('losses', loss, reduce=mode), float(weight)) for loss, weight, mode in zip(losses, weights, modes)]
+    if isinstance(reduces, str | Reduces):
+        reduces = [reduces] * len(losses)
+    return [(get('losses', loss, reduce=reduce), float(weight)) for loss, weight, reduce in zip(losses, weights, reduces)]
 
 
 def compute_loss(
