@@ -22,4 +22,3 @@ class TrainState(train_state.TrainState):
     Include losses inside to be able to use them in the training loop.
     """
     losses: loss_wrapper
-    reduce: Literal['sum', 'mean', None]
