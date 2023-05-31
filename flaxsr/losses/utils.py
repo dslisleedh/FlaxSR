@@ -28,6 +28,9 @@ class Reduces(Enum):
 
 
 def reduce_fn(loss, reduce: str | Reduces) -> jnp.ndarray:
+    if isinstance(reduce, str):
+        reduce = Reduces(reduce)
+
     if reduce == Reduces.SUM:
         return jnp.sum(loss)
     elif reduce == Reduces.MEAN:
@@ -76,9 +79,18 @@ def get_loss_wrapper(
 ) -> loss_wrapper:
     assert len(losses) == len(weights), \
         f"Number of losses and weights must be equal, got {len(losses)} and {len(weights)}"
+
     if isinstance(reduces, str | Reduces):
         reduces = [reduces] * len(losses)
-    return [(get('losses', loss, reduce=reduce), float(weight)) for loss, weight, reduce in zip(losses, weights, reduces)]
+
+    # Prevent user from using None with others(Sum, Mean)
+    assert all(True if reduce in ['none', Reduces.NONE] else False for reduce in reduces) or \
+           all(True if reduce not in ['none', Reduces.NONE] else False for reduce in reduces), \
+        f'Cannot use None with others(Sum, Mean), got {reduces}'
+
+    return [
+        (get('losses', loss, reduce=reduce), float(weight)) for loss, weight, reduce in zip(losses, weights, reduces)
+    ]
 
 
 def compute_loss(
