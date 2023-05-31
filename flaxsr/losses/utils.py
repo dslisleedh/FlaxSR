@@ -10,6 +10,7 @@ import einops
 
 from functools import partial
 from typing import Sequence, Literal, Any, Optional
+from enum import Enum
 
 import os
 import pickle
@@ -17,18 +18,24 @@ import pickle
 from flaxsr._utils import get
 
 
-loss_wrapper = Any
+loss_wrapper = Sequence[tuple[Any, float]]
 
 
-def reduce_fn(loss, reduce: Literal['sum', 'mean', None]) -> jnp.ndarray:
-    if reduce == 'sum':
+class Reduces(Enum):
+    SUM = 'sum'
+    MEAN = 'mean'
+    NONE = 'none'
+
+
+def reduce_fn(loss, reduce: str | Reduces) -> jnp.ndarray:
+    if reduce == Reduces.SUM:
         return jnp.sum(loss)
-    elif reduce == 'mean':
+    elif reduce == Reduces.MEAN:
         return jnp.mean(loss)
-    elif reduce is None:
+    elif reduce == Reduces.NONE:
         return loss
     else:
-        raise ValueError(f"Invalid reduce mode, got {reduce}. Must be ['sum', 'mean', None]")
+        raise ValueError(f"Unknown reduce type {reduce}")
 
 
 def _get_package_dir():
@@ -64,15 +71,18 @@ def load_vgg19_params():
     return params
 
 
-def get_loss_wrapper(losses: Sequence[str], weights: Sequence[float]) -> loss_wrapper:
+def get_loss_wrapper(
+        losses: Sequence[str], weights: Sequence[float], modes: str | Reduces | Sequence[str | Reduces] = 'mean'
+) -> loss_wrapper:
     assert len(losses) == len(weights), \
         f"Number of losses and weights must be equal, got {len(losses)} and {len(weights)}"
-    return [(get('losses', loss), float(weight)) for loss, weight in zip(losses, weights)]
+    if isinstance(modes, str | Reduces):
+        modes = [modes] * len(losses)
+    return [(get('losses', loss, reduce=mode), float(weight)) for loss, weight, mode in zip(losses, weights, modes)]
 
 
 def compute_loss(
-        hr: jnp.ndarray, sr: jnp.ndarray, losses: loss_wrapper, mode: Literal['sum', 'mean', None] = 'sum',
-        mask: Optional[jnp.ndarray] = None
+        hr: jnp.ndarray, sr: jnp.ndarray, losses: loss_wrapper, mask: Optional[jnp.ndarray] = None
 ) -> jnp.ndarray:
     loss = jnp.zeros(())
 
@@ -81,6 +91,6 @@ def compute_loss(
         sr = sr * mask
 
     for loss_fn, weight in losses:
-        loss += weight * reduce_fn(loss_fn(hr, sr), mode)
+        loss += weight * loss_fn(hr, sr)
 
     return loss

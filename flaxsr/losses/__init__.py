@@ -17,8 +17,14 @@ from .adversarial_losses import (
 from .utils import (
     check_vgg_params_exists as check_vgg_params_exists,
     load_vgg19_params as load_vgg19_params,
+    get_loss_wrapper as get_loss_wrapper,
+    compute_loss as compute_loss,
+    Reduces as Reduces,
 )
 
 
 check_vgg_params_exists()
 del check_vgg_params_exists
+
+
+# TODO: How to deal with reduce operation?

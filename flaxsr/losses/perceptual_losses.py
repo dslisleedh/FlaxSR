@@ -11,7 +11,7 @@ import einops
 from functools import partial
 from typing import Sequence, Literal
 
-from flaxsr.losses.utils import reduce_fn
+from flaxsr.losses.utils import reduce_fn, Reduces
 from flaxsr._utils import register
 
 
@@ -52,7 +52,7 @@ def _get_feats_from_vgg19(x: jnp.ndarray, params: Pytree, before_act: bool) -> S
 @partial(jax.jit, static_argnums=(3, 4, 5,))
 def vgg_loss(
         hr: jnp.ndarray, sr: jnp.ndarray, vgg_params: Pytree,
-        feats_from: Sequence[int], before_act: bool = False, mode: Literal['mean', 'sum', None] = 'mean'
+        feats_from: Sequence[int], before_act: bool = False, reduces: str | Reduces = 'mean'
 ) -> jnp.ndarray:
     hr_feats = _get_feats_from_vgg19(hr, vgg_params, before_act)
     sr_feats = _get_feats_from_vgg19(sr, vgg_params, before_act)
@@ -61,20 +61,20 @@ def vgg_loss(
     for i, (hr_feats, sr_feats) in enumerate(zip(hr_feats, sr_feats)):
         if i in feats_from:
             loss += jnp.mean((hr_feats - sr_feats) ** 2, axis=(1, 2, 3))
-    return reduce_fn(loss, mode)
+    return reduce_fn(loss, reduces)
 
 
 @register('losses', 'vgg')
 class VGGLoss:
     def __init__(
-            self, feats_from: Sequence[int], before_act: bool = False, mode: Literal['mean', 'sum', None] = 'mean'
+            self, feats_from: Sequence[int], before_act: bool = False, reduces: str | Reduces = 'mean'
     ):
         self.feats_from = feats_from
         self.before_act = before_act
-        self.mode = mode
+        self.reduces = reduces
 
     def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, vgg_params: Pytree) -> jnp.ndarray:
-        return vgg_loss(hr, sr, vgg_params, self.feats_from, self.before_act, self.mode)
+        return vgg_loss(hr, sr, vgg_params, self.feats_from, self.before_act, self.reduces)
 
 
 """
