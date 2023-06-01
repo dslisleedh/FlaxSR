@@ -19,9 +19,6 @@ from absl.testing import parameterized, absltest
 import flaxsr
 
 
-# TODO: IMPLEMENT THIS
-
-
 class TestTrainState(absltest.TestCase):
     def test_0_train(self):
         model_kwargs = {
@@ -30,7 +27,7 @@ class TestTrainState(absltest.TestCase):
             'scale': 4
         }
         model = flaxsr.get('models', 'vdsr', **model_kwargs)
-        losses = flaxsr.losses.get_loss_wrapper(
+        losses = flaxsr.losses.LossWrapper(
             ['l1', 'l2'],
             [.9, .1]
         )
@@ -46,7 +43,7 @@ class TestTrainState(absltest.TestCase):
 
         def loss_fn(p):
             sr = state.apply_fn(state.params, lr)
-            return flaxsr.losses.compute_loss(hr, sr, state.losses)
+            return state.losses(hr, sr)
 
         grad_fn = jax.value_and_grad(loss_fn)
         loss, grad = grad_fn(state.params)

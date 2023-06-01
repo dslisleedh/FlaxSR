@@ -13,7 +13,7 @@ from functools import partial
 from typing import Sequence, Literal
 
 from flaxsr._utils import register
-from flaxsr.losses.utils import loss_wrapper
+from flaxsr.losses import LossWrapper
 
 
 class TrainState(train_state.TrainState):
@@ -21,4 +21,4 @@ class TrainState(train_state.TrainState):
     Custom TrainState for the SR model.
     Include losses inside to be able to use them in the training loop.
     """
-    losses: loss_wrapper
+    losses: LossWrapper

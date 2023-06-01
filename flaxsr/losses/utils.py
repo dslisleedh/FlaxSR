@@ -18,9 +18,6 @@ import pickle
 from flaxsr._utils import get
 
 
-loss_wrapper = Sequence[tuple[Any, float]]
-
-
 class Reduces(Enum):
     SUM = 'sum'
     MEAN = 'mean'
@@ -74,35 +71,70 @@ def load_vgg19_params():
     return params
 
 
-def get_loss_wrapper(
-        losses: Sequence[str], weights: Sequence[float], reduces: str | Reduces | Sequence[str | Reduces] = 'mean'
-) -> loss_wrapper:
-    assert len(losses) == len(weights), \
-        f"Number of losses and weights must be equal, got {len(losses)} and {len(weights)}"
+# def get_loss_wrapper(
+#         losses: Sequence[str], weights: Sequence[float], reduces: str | Reduces | Sequence[str | Reduces] = 'mean'
+# ) -> loss_wrapper:
+#     assert len(losses) == len(weights), \
+#         f"Number of losses and weights must be equal, got {len(losses)} and {len(weights)}"
+#
+#     if isinstance(reduces, str | Reduces):
+#         reduces = [reduces] * len(losses)
+#
+#     # Prevent user from using None with others(Sum, Mean)
+#     assert all(True if reduce in ['none', Reduces.NONE] else False for reduce in reduces) or \
+#            all(True if reduce not in ['none', Reduces.NONE] else False for reduce in reduces), \
+#         f'Cannot use None with others(Sum, Mean), got {reduces}'
+#
+#     return [
+#         (get('losses', loss, reduce=reduce), float(weight)) for loss, weight, reduce in zip(losses, weights, reduces)
+#     ]
+#
+#
+# def compute_loss(
+#         hr: jnp.ndarray, sr: jnp.ndarray, losses: loss_wrapper, mask: Optional[jnp.ndarray] = None
+# ) -> jnp.ndarray:
+#     loss = jnp.zeros(())
+#
+#     if mask is not None:
+#         hr = hr * mask
+#         sr = sr * mask
+#
+#     for loss_fn, weight in losses:
+#         loss += weight * loss_fn(hr, sr)
+#
+#     return loss
 
-    if isinstance(reduces, str | Reduces):
-        reduces = [reduces] * len(losses)
 
-    # Prevent user from using None with others(Sum, Mean)
-    assert all(True if reduce in ['none', Reduces.NONE] else False for reduce in reduces) or \
-           all(True if reduce not in ['none', Reduces.NONE] else False for reduce in reduces), \
-        f'Cannot use None with others(Sum, Mean), got {reduces}'
-
-    return [
-        (get('losses', loss, reduce=reduce), float(weight)) for loss, weight, reduce in zip(losses, weights, reduces)
-    ]
+# TODO: Maybe make class of Loss wrapper and add __call__ method is better???
 
 
-def compute_loss(
-        hr: jnp.ndarray, sr: jnp.ndarray, losses: loss_wrapper, mask: Optional[jnp.ndarray] = None
-) -> jnp.ndarray:
-    loss = jnp.zeros(())
+class LossWrapper:
+    def __init__(
+            self, losses: Sequence[str], weights: Sequence[float], reduces: str | Reduces | Sequence[str | Reduces] = 'mean'
+    ):
+        assert len(losses) == len(weights), \
+            f"Number of losses and weights must be equal, got {len(losses)} and {len(weights)}"
 
-    if mask is not None:
-        hr = hr * mask
-        sr = sr * mask
+        if isinstance(reduces, str | Reduces):
+            reduces = [reduces] * len(losses)
 
-    for loss_fn, weight in losses:
-        loss += weight * loss_fn(hr, sr)
+        # Prevent user from using None with others(Sum, Mean)
+        assert all(True if reduce in ['none', Reduces.NONE] else False for reduce in reduces) or \
+               all(True if reduce not in ['none', Reduces.NONE] else False for reduce in reduces), \
+            f'Cannot use None with others(Sum, Mean), got {reduces}'
 
-    return loss
+        self.losses = [
+            (get('losses', loss, reduce=reduce), float(weight)) for loss, weight, reduce in zip(losses, weights, reduces)
+        ]
+
+    def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
+        loss = jnp.zeros(())
+
+        if mask is not None:
+            hr = hr * mask
+            sr = sr * mask
+
+        for loss_fn, weight in self.losses:
+            loss += weight * loss_fn(hr, sr)
+
+        return loss
