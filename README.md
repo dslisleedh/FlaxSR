@@ -29,11 +29,12 @@ losses = [
     flaxsr.get('losses', 'vgg', feats_from=(6, 8, 14,), before_act=False, reduce='mean')
 ]
 loss_weights = (.1, 1.)
+loss_wrapper = flaxsr.losses.LossWrapper(losses, loss_weights)
 params = model.init(jax.random.PRNGKey(0), jnp.ones((1, 8, 8, 3), dtype=jnp.float32))
 tx = optax.adam(1e-3)
 
 state = flaxsr.training.TrainState.create(
-    apply_fn=model.apply, params=params, tx=tx, losses=losses
+    apply_fn=model.apply, params=params, tx=tx, losses=loss_wrapper
 )
 
 hr = jnp.ones((1, 32, 32, 3), dtype=jnp.float32)
