@@ -67,4 +67,55 @@ class SRResNet(nn.Module):
 
         out = nn.Conv(shape[-1], (9, 9), padding='SAME')(feats)
         return out
-    
+
+
+class DiscriminatorBlock(nn.Module):
+    n_filters: int
+    kernel_size: int
+    strides: int
+
+    @nn.compact
+    def __call__(self, x: jnp.ndarray, training: bool) -> jnp.ndarray:
+        x = nn.Conv(self.n_filters, (self.kernel_size, self.kernel_size), strides=self.strides)(x)
+        x = nn.BatchNorm()(x, use_running_average=not training)
+        x = nn.activation.leaky_relu(x, negative_slope=0.2)
+        return x
+
+
+class Discriminator(nn.Module):
+    n_filters: int = 64
+
+    @nn.compact
+    def __call__(self, x: jnp.ndarray, training: bool) -> jnp.ndarray:
+        x = nn.Conv(self.n_filters, (3, 3))(x)
+        x = nn.activation.leaky_relu(x, negative_slope=0.2)
+
+        x = DiscriminatorBlock(self.n_filters, 3, 2)(x, training=training)
+        x = DiscriminatorBlock(self.n_filters * 2, 3, 1)(x, training=training)
+        x = DiscriminatorBlock(self.n_filters * 2, 3, 2)(x, training=training)
+        x = DiscriminatorBlock(self.n_filters * 4, 3, 1)(x, training=training)
+        x = DiscriminatorBlock(self.n_filters * 4, 3, 2)(x, training=training)
+        x = DiscriminatorBlock(self.n_filters * 8, 3, 1)(x, training=training)
+        x = DiscriminatorBlock(self.n_filters * 8, 3, 2)(x, training=training)
+
+        x = einops.rearrange(x, '... h w c -> ... (h w c)')
+        x = nn.Dense(1024)(x)
+        x = nn.activation.leaky_relu(x, negative_slope=0.2)
+        x = nn.Dense(1)(x)
+        return x
+
+
+@register('models', 'srgan')
+class SRGAN(nn.Module):
+    generator_spec: dict
+    discriminator_spec: dict
+
+    def setup(self) -> None:
+        self.generator = SRResNet(**self.generator_spec)
+        self.discriminator = Discriminator(**self.discriminator_spec)
+
+    def __call__(self, x: jnp.ndarray, training: bool = False) -> jnp.ndarray:
+        return self.generator(x, training=training)
+
+    def discriminate(self, x: jnp.ndarray, training: bool = False) -> jnp.ndarray:
+        return self.discriminator(x, training=training)
