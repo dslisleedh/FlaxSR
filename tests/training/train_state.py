@@ -28,8 +28,8 @@ class TestTrainState(absltest.TestCase):
         }
         model = flaxsr.get('models', 'vdsr', **model_kwargs)
         losses = [
-            flaxsr.get('losses', 'l1', 'mean'),
-            flaxsr.get('losses', 'vgg', (6, 8, 14,), False)
+            flaxsr.losses.L1Loss(reduce='sum'),
+            flaxsr.get('losses', 'vgg', feats_from=(6, 8, 14,), before_act=False, reduce='mean')
         ]
         weights = (.1, 1.,)
         loss_wrapper = flaxsr.losses.LossWrapper(losses, weights)

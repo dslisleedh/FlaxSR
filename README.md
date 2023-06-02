@@ -23,11 +23,10 @@ import optax
 model_kwargs = {
     'n_filters': 64, 'n_blocks': 8, 'scale': 4
 }
-model = flaxsr.get("models", "vdsr", **model_kwargs)
-# TODO: Fix this
+model = flaxsr.get("models", "vdsr", **model_kwargs)  # This equals flaxsr.models.VDSR(**model_kwargs)
 losses = [
-    flaxsr.get('losses', 'l1', 'mean'),
-    flaxsr.get('losses', 'vgg', (6, 8, 14,), False)
+    flaxsr.losses.L1Loss(reduce='sum'),
+    flaxsr.get('losses', 'vgg', feats_from=(6, 8, 14,), before_act=False, reduce='mean')
 ]
 loss_weights = (.1, 1.)
 params = model.init(jax.random.PRNGKey(0), jnp.ones((1, 8, 8, 3), dtype=jnp.float32))
