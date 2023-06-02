@@ -21,16 +21,6 @@ jax.config.parse_flags_with_absl()
 """
 
 
-check_vgg_params_exists()
-search_space = {
-    'feats_from': [(16,), (0,), (2, 5, 6), (6, 8, 14)],
-    'before_act': [True, False],
-    'mode': ['mean', 'sum', None]
-}
-search_space_list = list(product(*search_space.values()))
-search_space = [dict(zip(search_space.keys(), v)) for v in search_space_list]
-
-
 class TestVGGLoss(parameterized.TestCase):
     def test_1_weights(self):
         tf.keras.backend.clear_session()
@@ -64,16 +54,6 @@ class TestVGGLoss(parameterized.TestCase):
             tf_out = model_tf(inp)
             jax_out = _get_feats_from_vgg19(jnp.asarray(inp), weights_jax, False)
             np.allclose(np.asarray(tf_out), np.asarray(jax_out[-1]), atol=1e-5, rtol=1e-5)
-
-    @parameterized.parameters(search_space)
-    def test_3_loss(self, feats_from, before_act, mode):
-        weights_jax = load_vgg19_params()
-
-        inp = np.random.normal(size=(16, 256, 256, 3)) * 3.
-        inp = jnp.asarray(inp)
-
-        out = vgg_loss(inp, inp, weights_jax, feats_from, before_act, mode)
-        np.allclose(out, 0.0, atol=1e-5, rtol=1e-5)
 
 
 if __name__ == "__main__":

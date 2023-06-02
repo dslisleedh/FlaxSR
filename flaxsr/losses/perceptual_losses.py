@@ -9,9 +9,9 @@ import numpy as np
 import einops
 
 from functools import partial
-from typing import Sequence, Literal
+from typing import Sequence, Literal, Optional
 
-from flaxsr.losses.utils import reduce_fn, Reduces
+from flaxsr.losses.utils import reduce_fn, Reduce, Loss, load_vgg19_params, apply_mask
 from flaxsr._utils import register
 
 
@@ -49,11 +49,12 @@ def _get_feats_from_vgg19(x: jnp.ndarray, params: Pytree, before_act: bool) -> S
     return outputs
 
 
-@partial(jax.jit, static_argnums=(3, 4, 5,))
+@partial(jax.jit, static_argnums=(3, 5, 6,))
 def vgg_loss(
-        hr: jnp.ndarray, sr: jnp.ndarray, vgg_params: Pytree,
-        feats_from: Sequence[int], before_act: bool = False, reduces: str | Reduces = 'mean'
+        hr: jnp.ndarray, sr: jnp.ndarray, vgg_params: Pytree, feats_from: Sequence[int],
+        mask: Optional[jnp.ndarray] = None, before_act: bool = False, reduce: str | Reduce = 'mean'
 ) -> jnp.ndarray:
+    hr, sr = apply_mask(hr, sr, mask=mask)
     hr_feats = _get_feats_from_vgg19(hr, vgg_params, before_act)
     sr_feats = _get_feats_from_vgg19(sr, vgg_params, before_act)
 
@@ -61,20 +62,21 @@ def vgg_loss(
     for i, (hr_feats, sr_feats) in enumerate(zip(hr_feats, sr_feats)):
         if i in feats_from:
             loss += jnp.mean((hr_feats - sr_feats) ** 2, axis=(1, 2, 3))
-    return reduce_fn(loss, reduces)
+    return reduce_fn(loss, reduce)
 
 
 @register('losses', 'vgg')
-class VGGLoss:
+class VGGLoss(Loss):
     def __init__(
-            self, feats_from: Sequence[int], before_act: bool = False, reduces: str | Reduces = 'mean'
+            self, feats_from: Sequence[int], before_act: bool = False, reduce: str | Reduce = 'mean'
     ):
+        super().__init__(reduce)
         self.feats_from = feats_from
         self.before_act = before_act
-        self.reduces = reduces
+        self.vgg_params = load_vgg19_params()
 
-    def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, vgg_params: Pytree) -> jnp.ndarray:
-        return vgg_loss(hr, sr, vgg_params, self.feats_from, self.before_act, self.reduces)
+    def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
+        return vgg_loss(hr, sr, self.vgg_params, self.feats_from, mask, self.before_act, self.reduce)
 
 
 """

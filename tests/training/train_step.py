@@ -27,15 +27,17 @@ class TestTrainStep(absltest.TestCase):
             'scale': 4
         }
         model = flaxsr.get('models', 'vdsr', **model_kwargs)
-        losses = flaxsr.losses.LossWrapper(
-            ['l1', 'l2'],
-            [.9, .1]
-        )
+        losses = [
+            flaxsr.get('losses', 'l1', 'mean'),
+            flaxsr.get('losses', 'vgg', (6, 8, 14,), False)
+        ]
+        weights = (.1, 1.,)
+        loss_wrapper = flaxsr.losses.LossWrapper(losses, weights)
         params = model.init(jax.random.PRNGKey(0), jnp.ones((1, 32, 32, 3), dtype=jnp.float32))
         tx = optax.adam(1e-3)
 
         state = flaxsr.training.TrainState.create(
-            apply_fn=model.apply, params=params, tx=tx, losses=losses,
+            apply_fn=model.apply, params=params, tx=tx, losses=loss_wrapper,
         )
 
         hr = jnp.ones((1, 32, 32, 3), dtype=jnp.float32)

@@ -11,6 +11,7 @@ import einops
 from functools import partial
 from typing import Sequence, Literal, Any, Optional
 from enum import Enum
+from abc import ABC, abstractmethod
 
 import os
 import pickle
@@ -18,24 +19,43 @@ import pickle
 from flaxsr._utils import get
 
 
-class Reduces(Enum):
+class Reduce(Enum):
     SUM = 'sum'
     MEAN = 'mean'
     NONE = 'none'
 
 
-def reduce_fn(loss, reduce: str | Reduces) -> jnp.ndarray:
-    if isinstance(reduce, str):
-        reduce = Reduces(reduce)
+class Loss(ABC):
+    def __init__(self, reduce: str | Reduce = 'mean'):
+        self.reduce = reduce
 
-    if reduce == Reduces.SUM:
+    @abstractmethod
+    def __call__(self, *args, **kwargs) -> jnp.ndarray:
+        """
+        hr and sr for discriminative manner
+        true and fake or only fake for generative manner
+        """
+        pass
+
+
+def reduce_fn(loss, reduce: str | Reduce) -> jnp.ndarray:
+    if isinstance(reduce, str):
+        reduce = Reduce(reduce)
+
+    if reduce == Reduce.SUM:
         return jnp.sum(loss)
-    elif reduce == Reduces.MEAN:
+    elif reduce == Reduce.MEAN:
         return jnp.mean(loss)
-    elif reduce == Reduces.NONE:
+    elif reduce == Reduce.NONE:
         return loss
     else:
         raise ValueError(f"Unknown reduce type {reduce}")
+
+
+def apply_mask(*args, mask: Optional[jnp.ndarray]) -> tuple[jnp.ndarray, ...]:
+    if mask is None:
+        return args
+    return tuple(arg * mask for arg in args)
 
 
 def _get_package_dir():
@@ -71,70 +91,21 @@ def load_vgg19_params():
     return params
 
 
-# def get_loss_wrapper(
-#         losses: Sequence[str], weights: Sequence[float], reduces: str | Reduces | Sequence[str | Reduces] = 'mean'
-# ) -> loss_wrapper:
-#     assert len(losses) == len(weights), \
-#         f"Number of losses and weights must be equal, got {len(losses)} and {len(weights)}"
-#
-#     if isinstance(reduces, str | Reduces):
-#         reduces = [reduces] * len(losses)
-#
-#     # Prevent user from using None with others(Sum, Mean)
-#     assert all(True if reduce in ['none', Reduces.NONE] else False for reduce in reduces) or \
-#            all(True if reduce not in ['none', Reduces.NONE] else False for reduce in reduces), \
-#         f'Cannot use None with others(Sum, Mean), got {reduces}'
-#
-#     return [
-#         (get('losses', loss, reduce=reduce), float(weight)) for loss, weight, reduce in zip(losses, weights, reduces)
-#     ]
-#
-#
-# def compute_loss(
-#         hr: jnp.ndarray, sr: jnp.ndarray, losses: loss_wrapper, mask: Optional[jnp.ndarray] = None
-# ) -> jnp.ndarray:
-#     loss = jnp.zeros(())
-#
-#     if mask is not None:
-#         hr = hr * mask
-#         sr = sr * mask
-#
-#     for loss_fn, weight in losses:
-#         loss += weight * loss_fn(hr, sr)
-#
-#     return loss
-
-
-# TODO: Maybe make class of Loss wrapper and add __call__ method is better???
-
-
 class LossWrapper:
-    def __init__(
-            self, losses: Sequence[str], weights: Sequence[float], reduces: str | Reduces | Sequence[str | Reduces] = 'mean'
-    ):
-        assert len(losses) == len(weights), \
-            f"Number of losses and weights must be equal, got {len(losses)} and {len(weights)}"
-
-        if isinstance(reduces, str | Reduces):
-            reduces = [reduces] * len(losses)
-
+    def __init__(self, losses: Sequence[Loss], weights: Sequence[float]):
         # Prevent user from using None with others(Sum, Mean)
-        assert all(True if reduce in ['none', Reduces.NONE] else False for reduce in reduces) or \
-               all(True if reduce not in ['none', Reduces.NONE] else False for reduce in reduces), \
+        reduces = [loss.reduce for loss in losses]
+        assert all(True if reduce in ['none', Reduce.NONE] else False for reduce in reduces) or \
+               all(True if reduce not in ['none', Reduce.NONE] else False for reduce in reduces), \
             f'Cannot use None with others(Sum, Mean), got {reduces}'
 
-        self.losses = [
-            (get('losses', loss, reduce=reduce), float(weight)) for loss, weight, reduce in zip(losses, weights, reduces)
-        ]
+        self.losses = losses
+        self.weights = weights
 
     def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
         loss = jnp.zeros(())
 
-        if mask is not None:
-            hr = hr * mask
-            sr = sr * mask
-
-        for loss_fn, weight in self.losses:
-            loss += weight * loss_fn(hr, sr)
+        for loss_fn, weight in zip(self.losses, self.weights):
+            loss += weight * loss_fn(hr, sr, mask)
 
         return loss

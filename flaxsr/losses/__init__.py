@@ -19,7 +19,7 @@ from .utils import (
     load_vgg19_params as load_vgg19_params,
     # get_loss_wrapper as get_loss_wrapper,
     # compute_loss as compute_loss,
-    Reduces as Reduces,
+    Reduce as Reduces,
     LossWrapper as LossWrapper,
 )
 

@@ -15,43 +15,323 @@ import flaxsr
 jax.config.parse_flags_with_absl()
 
 
-class TestLosses(absltest.TestCase):
-    def test_0_loss_none_includes(self):
-        names = ['l1', 'l2', 'charbonnier']
-        weights = [1.0, 2.0, 3.0]
+search_space = {
+    'reduce': ['none', 'mean', 'sum'],
+    'use_mask': [True, False],
+    'same_input': [True, False],
+    'jit': [True, False],
+}
+search_space_ = list(product(*search_space.values()))
+pixel_wise_loss_search_space = [dict(zip(search_space.keys(), v)) for v in search_space_]
 
-        reduces = 'none'
-        flaxsr.losses.LossWrapper(names, weights, reduces)
+flaxsr.losses.utils.check_vgg_params_exists()
+search_space = {
+    'feats_from': [(16,), (0,), (2, 5, 6), (6, 8, 14)],
+    'before_act': [True, False],
+    'reduce': ['mean', 'sum', 'sum'],
+    'use_mask': [True, False],
+    'jit': [True, False],
+    'same_input': [True, False],
+}
+search_space_ = list(product(*search_space.values()))
+perceptual_loss_search_space = [dict(zip(search_space.keys(), v)) for v in search_space_]
 
-        reduces = ['none', 'none', 'none']
-        flaxsr.losses.LossWrapper(names, weights, reduces)
+search_space = {
+    'reduce': ['none', 'mean', 'sum'],
+    'from_logits': [True, False],
+    'same_input': [True, False],
+    'jit': [True, False],
+}
+search_space_ = list(product(*search_space.values()))
+adversarial_loss_search_space = [dict(zip(search_space.keys(), v)) for v in search_space_]
 
-        reduces = ['sum', 'sum', 'sum']
-        flaxsr.losses.LossWrapper(names, weights, reduces)
+
+class TestPixelWiseLosses(parameterized.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.hr_ones = jnp.ones((1, 32, 32, 3))
+        self.hr_zeros = jnp.zeros((1, 32, 32, 3))
+        self.sr_ones = jnp.ones((1, 32, 32, 3))
+        self.sr_zeros = jnp.zeros((1, 32, 32, 3))
+
+        self.mask = jnp.ones((1, 32, 32, 3))
+
+    @parameterized.parameters(*pixel_wise_loss_search_space)
+    def test_0_l1(self, reduce, use_mask, same_input, jit):
+        Loss = flaxsr.get('losses', 'l1', reduce)
+        if jit:
+            Loss = jax.jit(Loss)
+
+        if same_input:
+            hr = self.hr_ones
+            sr = self.sr_ones
+        else:
+            hr = self.hr_ones
+            sr = self.sr_zeros
+
+        inp = (hr, sr) if use_mask else (hr, sr, self.mask)
+        loss = Loss(*inp)
+
+        if reduce == 'none':
+            self.assertEqual(loss.shape, (1, 32, 32, 3))
+        else:
+            self.assertEqual(loss.shape, ())
+
+        if same_input:
+            np.equal(np.zeros(()), np.sum(loss))
+        else:
+            np.not_equal(np.zeros(()), np.sum(loss))
+
+    @parameterized.parameters(*pixel_wise_loss_search_space)
+    def test_1_l2(self, reduce, use_mask, same_input, jit):
+        Loss = flaxsr.get('losses', 'l2', reduce)
+        if jit:
+            Loss = jax.jit(Loss)
+
+        if same_input:
+            hr = self.hr_ones
+            sr = self.sr_ones
+        else:
+            hr = self.hr_ones
+            sr = self.sr_zeros
+
+        inp = (hr, sr) if use_mask else (hr, sr, self.mask)
+        loss = Loss(*inp)
+
+        if reduce == 'none':
+            self.assertEqual(loss.shape, (1, 32, 32, 3))
+        else:
+            self.assertEqual(loss.shape, ())
+
+        if same_input:
+            np.equal(np.zeros(()), np.sum(loss))
+        else:
+            np.not_equal(np.zeros(()), np.sum(loss))
+
+    @parameterized.parameters(*pixel_wise_loss_search_space)
+    def test_2_charbonnier(self, reduce, use_mask, same_input, jit):
+        Loss = flaxsr.get('losses', 'charbonnier', .001, reduce)  # eps
+        if jit:
+            Loss = jax.jit(Loss)
+
+        if same_input:
+            hr = self.hr_ones
+            sr = self.sr_ones
+        else:
+            hr = self.hr_ones
+            sr = self.sr_zeros
+
+        inp = (hr, sr) if use_mask else (hr, sr, self.mask)
+        loss = Loss(*inp)
+
+        if reduce == 'none':
+            self.assertEqual(loss.shape, (1, 32, 32, 3))
+        else:
+            self.assertEqual(loss.shape, ())
+
+        if same_input:
+            np.equal(np.zeros(()), np.sum(loss))
+        else:
+            np.not_equal(np.zeros(()), np.sum(loss))
+
+
+class TestPerceptualLoss(parameterized.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.hr_ones = jnp.ones((1, 32, 32, 3))
+        self.hr_zeros = jnp.zeros((1, 32, 32, 3))
+        self.sr_ones = jnp.ones((1, 32, 32, 3))
+        self.sr_zeros = jnp.zeros((1, 32, 32, 3))
+
+        self.mask = jnp.ones((1, 32, 32, 3))
+
+    @parameterized.parameters(*perceptual_loss_search_space)
+    def test_0_vgg(self, feats_from, before_act, reduce, use_mask, same_input, jit):
+        Loss = flaxsr.get('losses', 'vgg', feats_from, before_act, reduce)
+        if jit:
+            Loss = jax.jit(Loss)
+
+        if same_input:
+            hr = self.hr_ones
+            sr = self.sr_ones
+        else:
+            hr = self.hr_ones
+            sr = self.sr_zeros
+
+        inp = (hr, sr) if use_mask else (hr, sr, self.mask)
+        loss = Loss(*inp)
+
+        if reduce == 'none':
+            self.assertEqual(loss.shape, (1, 32, 32, 3))
+        else:
+            self.assertEqual(loss.shape, ())
+
+        if same_input:
+            np.equal(np.zeros(()), np.sum(loss))
+        else:
+            np.not_equal(np.zeros(()), np.sum(loss))
+
+
+class TestAdversarialLoss(parameterized.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.hr_ones = jnp.ones((16, 1))
+        self.hr_zeros = jnp.zeros((16, 1))
+        self.sr_ones = jnp.ones((16, 1))
+        self.sr_zeros = jnp.zeros((16, 1))
+
+    @parameterized.parameters(*adversarial_loss_search_space)
+    def test_0_minmax(self, reduce, from_logits, same_input, jit):
+        discriminator_loss = flaxsr.get('losses', 'minmax_discriminator', from_logits, reduce)
+        generator_loss = flaxsr.get('losses', 'minmax_generator', from_logits, reduce)
+
+        if jit:
+            discriminator_loss = jax.jit(discriminator_loss)
+            generator_loss = jax.jit(generator_loss)
+
+        if same_input:
+            hr = self.hr_ones
+            sr = self.sr_ones
+        else:
+            hr = self.hr_ones
+            sr = self.sr_zeros
+
+        discriminator_loss = discriminator_loss(hr, sr)
+        generator_loss = generator_loss(sr)
+
+        if reduce == 'none':
+            self.assertEqual(discriminator_loss.shape, (16, 1))
+            self.assertEqual(generator_loss.shape, (16, 1))
+        else:
+            self.assertEqual(discriminator_loss.shape, ())
+            self.assertEqual(generator_loss.shape, ())
+
+        if same_input:
+            np.equal(np.zeros(()), np.sum(discriminator_loss))
+        else:
+            np.not_equal(np.zeros(()), np.sum(discriminator_loss))
+
+    @parameterized.parameters(*adversarial_loss_search_space)
+    def test_1_least_square(self, reduce, from_logits, same_input, jit):
+        discriminator_loss = flaxsr.get('losses', 'least_square_discriminator', from_logits, reduce)
+        generator_loss = flaxsr.get('losses', 'least_square_generator', from_logits, reduce)
+
+        if jit:
+            discriminator_loss = jax.jit(discriminator_loss)
+            generator_loss = jax.jit(generator_loss)
+
+        if same_input:
+            hr = self.hr_ones
+            sr = self.sr_ones
+        else:
+            hr = self.hr_ones
+            sr = self.sr_zeros
+
+        discriminator_loss = discriminator_loss(hr, sr)
+        generator_loss = generator_loss(sr)
+
+        if reduce == 'none':
+            self.assertEqual(discriminator_loss.shape, (16, 1))
+            self.assertEqual(generator_loss.shape, (16, 1))
+        else:
+            self.assertEqual(discriminator_loss.shape, ())
+            self.assertEqual(generator_loss.shape, ())
+
+        if same_input:
+            np.equal(np.zeros(()), np.sum(discriminator_loss))
+        else:
+            np.not_equal(np.zeros(()), np.sum(discriminator_loss))
+
+    @parameterized.parameters(*adversarial_loss_search_space)
+    def test_2_relativistic(self, reduce, from_logits, same_input, jit):
+        # There's no from_logits for relativistic loss
+        discriminator_loss = flaxsr.get('losses', 'relativistic_discriminator', reduce)
+        generator_loss = flaxsr.get('losses', 'relativistic_generator', reduce)
+
+        if jit:
+            discriminator_loss = jax.jit(discriminator_loss)
+            generator_loss = jax.jit(generator_loss)
+
+        if same_input:
+            hr = self.hr_ones
+            sr = self.sr_ones
+        else:
+            hr = self.hr_ones
+            sr = self.sr_zeros
+
+        discriminator_loss = discriminator_loss(hr, sr)
+        generator_loss = generator_loss(hr, sr)
+
+        if reduce == 'none':
+            self.assertEqual(discriminator_loss.shape, (16, 1))
+            self.assertEqual(generator_loss.shape, (16, 1))
+        else:
+            self.assertEqual(discriminator_loss.shape, ())
+            self.assertEqual(generator_loss.shape, ())
+
+        if same_input:
+            np.equal(np.zeros(()), np.sum(discriminator_loss))
+        else:
+            np.not_equal(np.zeros(()), np.sum(discriminator_loss))
+
+
+class TestLossWrapper(absltest.TestCase):
+    def test_0_check_none_assert(self):
+        weights = (.1, 1., .5)
+
+        losses = [
+            flaxsr.get('losses', 'l1', 'none'),
+            flaxsr.get('losses', 'l2', 'none'),
+            flaxsr.get('losses', 'l1', 'none')
+        ]
+        flaxsr.losses.LossWrapper(losses, weights)
+
+        losses = [
+            flaxsr.get('losses', 'l1', 'mean'),
+            flaxsr.get('losses', 'l2', 'mean'),
+            flaxsr.get('losses', 'l1', 'mean')
+        ]
+        flaxsr.losses.LossWrapper(losses, weights)
+
+        losses = [
+            flaxsr.get('losses', 'l1', 'sum'),
+            flaxsr.get('losses', 'l2', 'sum'),
+            flaxsr.get('losses', 'l1', 'sum')
+        ]
+        flaxsr.losses.LossWrapper(losses, weights)
+
+        losses = [
+            flaxsr.get('losses', 'l1', 'sum'),
+            flaxsr.get('losses', 'l2', 'sum'),
+            flaxsr.get('losses', 'l1', 'mean')
+        ]
+        flaxsr.losses.LossWrapper(losses, weights)
 
         with self.assertRaises(AssertionError):
-            reduces = ['none', 'mean', 'sum']
-            flaxsr.losses.LossWrapper(names, weights, reduces)
+            losses = [
+                flaxsr.get('losses', 'l1', 'sum'),
+                flaxsr.get('losses', 'l2', 'sum'),
+                flaxsr.get('losses', 'l1', 'none')
+            ]
+            flaxsr.losses.LossWrapper(losses, weights)
 
-    def test_1_loss_calculation(self):
-        names = ['l1', 'l2', 'charbonnier']
-        weights = [1.0, 2.0, 3.0]
-        reduces = 'mean'
+    def test_discriminative_loss_calculation(self):
+        losses = [
+            flaxsr.get('losses', 'l1', 'mean'),
+            flaxsr.get('losses', 'vgg', (6, 8, 14,), False)
+        ]
+        weights = (.1, 1.,)
+        loss_wrapper = flaxsr.losses.LossWrapper(losses, weights)
 
-        loss_wrapper = flaxsr.losses.LossWrapper(names, weights, reduces)
-        hr = jnp.ones((1, 3, 3, 3))
-        sr = jnp.zeros((1, 3, 3, 3))
+        hr = np.ones((16, 32, 32, 3))
+        sr = np.zeros((16, 32, 32, 3))
 
-        rng = jax.random.PRNGKey(0)
-        mask = jax.random.bernoulli(rng, 0.5, hr.shape)
-
-        loss = loss_wrapper(hr, sr, mask)
-
-        loss_from_get = 0.
-        for name, weight in zip(names, weights):
-            loss_from_get += weight * flaxsr.get('losses', name)(hr * mask, sr * mask)
-
-        self.assertEqual(loss, loss_from_get)
+        loss = loss_wrapper(hr, sr)
+        self.assertEqual(loss.shape, ())
+        np.not_equal(np.zeros(()), loss)
 
 
 if __name__ == '__main__':
