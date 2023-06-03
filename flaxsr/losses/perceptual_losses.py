@@ -51,14 +51,14 @@ def _get_feats_from_vgg19(x: jnp.ndarray, params: Pytree, before_act: bool) -> S
 
 @partial(jax.jit, static_argnums=(3, 5, 6,))
 def vgg_loss(
-        hr: jnp.ndarray, sr: jnp.ndarray, vgg_params: Pytree, feats_from: Sequence[int],
+        sr: jnp.ndarray, hr: jnp.ndarray, vgg_params: Pytree, feats_from: Sequence[int],
         mask: Optional[jnp.ndarray] = None, before_act: bool = False, reduce: str | Reduce = 'mean'
 ) -> jnp.ndarray:
     hr, sr = apply_mask(hr, sr, mask=mask)
     hr_feats = _get_feats_from_vgg19(hr, vgg_params, before_act)
     sr_feats = _get_feats_from_vgg19(sr, vgg_params, before_act)
 
-    loss = 0.
+    loss = jnp.zeros(())
     for i, (hr_feats, sr_feats) in enumerate(zip(hr_feats, sr_feats)):
         if i in feats_from:
             loss += jnp.mean((hr_feats - sr_feats) ** 2, axis=(1, 2, 3))
@@ -75,8 +75,8 @@ class VGGLoss(Loss):
         self.before_act = before_act
         self.vgg_params = load_vgg19_params()
 
-    def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
-        return vgg_loss(hr, sr, self.vgg_params, self.feats_from, mask, self.before_act, self.reduce)
+    def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
+        return vgg_loss(sr, hr, self.vgg_params, self.feats_from, mask, self.before_act, self.reduce)
 
 
 """

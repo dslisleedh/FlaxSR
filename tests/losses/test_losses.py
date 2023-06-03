@@ -45,6 +45,13 @@ search_space = {
 search_space_ = list(product(*search_space.values()))
 adversarial_loss_search_space = [dict(zip(search_space.keys(), v)) for v in search_space_]
 
+search_space = {
+    'reduce': ['none', 'mean', 'sum'],
+    'jit': [True, False],
+}
+search_space_ = list(product(*search_space.values()))
+regularization_loss_search_space = [dict(zip(search_space.keys(), v)) for v in search_space_]
+
 
 class TestPixelWiseLosses(parameterized.TestCase):
     def __init__(self, *args, **kwargs):
@@ -96,7 +103,7 @@ class TestPixelWiseLosses(parameterized.TestCase):
             hr = self.hr_ones
             sr = self.sr_zeros
 
-        inp = (hr, sr) if use_mask else (hr, sr, self.mask)
+        inp = (sr, hr) if use_mask else (sr, hr, self.mask)
         loss = Loss(*inp)
 
         if reduce == 'none':
@@ -122,7 +129,7 @@ class TestPixelWiseLosses(parameterized.TestCase):
             hr = self.hr_ones
             sr = self.sr_zeros
 
-        inp = (hr, sr) if use_mask else (hr, sr, self.mask)
+        inp = (sr, hr) if use_mask else (sr, hr, self.mask)
         loss = Loss(*inp)
 
         if reduce == 'none':
@@ -160,7 +167,7 @@ class TestPerceptualLoss(parameterized.TestCase):
             hr = self.hr_ones
             sr = self.sr_zeros
 
-        inp = (hr, sr) if use_mask else (hr, sr, self.mask)
+        inp = (sr, hr) if use_mask else (sr, hr, self.mask)
         loss = Loss(*inp)
 
         if reduce == 'none':
@@ -199,7 +206,7 @@ class TestAdversarialLoss(parameterized.TestCase):
             hr = self.hr_ones
             sr = self.sr_zeros
 
-        discriminator_loss = discriminator_loss(hr, sr)
+        discriminator_loss = discriminator_loss(sr, hr)
         generator_loss = generator_loss(sr)
 
         if reduce == 'none':
@@ -230,7 +237,7 @@ class TestAdversarialLoss(parameterized.TestCase):
             hr = self.hr_ones
             sr = self.sr_zeros
 
-        discriminator_loss = discriminator_loss(hr, sr)
+        discriminator_loss = discriminator_loss(sr, hr)
         generator_loss = generator_loss(sr)
 
         if reduce == 'none':
@@ -262,8 +269,8 @@ class TestAdversarialLoss(parameterized.TestCase):
             hr = self.hr_ones
             sr = self.sr_zeros
 
-        discriminator_loss = discriminator_loss(hr, sr)
-        generator_loss = generator_loss(hr, sr)
+        discriminator_loss = discriminator_loss(sr, hr)
+        generator_loss = generator_loss(sr, hr)
 
         if reduce == 'none':
             self.assertEqual(discriminator_loss.shape, (16, 1))
@@ -329,9 +336,64 @@ class TestLossWrapper(absltest.TestCase):
         hr = np.ones((16, 32, 32, 3))
         sr = np.zeros((16, 32, 32, 3))
 
-        loss = loss_wrapper(hr, sr)
+        loss = loss_wrapper(sr, hr)
         self.assertEqual(loss.shape, ())
         np.not_equal(np.zeros(()), loss)
+
+
+class TestRegularizationLoss(parameterized.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.hr = jax.random.bernoulli(jax.random.PRNGKey(0), p=.5, shape=(16, 32, 32, 3)).astype(jnp.float32)
+        self.sr = jax.random.bernoulli(jax.random.PRNGKey(0), p=.5, shape=(16, 32, 32, 3)).astype(jnp.float32)
+
+    @parameterized.parameters(*regularization_loss_search_space)
+    def test_0_total_variation_loss(self, reduce, jit):
+        loss = flaxsr.get('losses', 'tv', reduce)
+        if jit:
+            loss = jax.jit(loss)
+
+        loss = loss(self.sr)
+
+        if reduce == 'none':
+            self.assertEqual(loss.shape, (16,))
+        else:
+            self.assertEqual(loss.shape, ())
+
+        np.not_equal(np.zeros(()), np.sum(loss))
+
+    @parameterized.parameters(*regularization_loss_search_space)
+    def test_1_frequency_reconstruction_loss(self, reduce, jit):
+        loss = flaxsr.get('losses', 'freq_recon', reduce)
+        if jit:
+            loss = jax.jit(loss)
+
+        loss = loss(self.sr, self.hr)
+
+        if reduce == 'none':
+            self.assertEqual(loss.shape, (16,))
+        else:
+            self.assertEqual(loss.shape, ())
+
+        np.not_equal(np.zeros(()), np.sum(loss))
+
+    @parameterized.parameters(*regularization_loss_search_space)
+    def test_2_edge_loss(self, reduce, jit):
+        for kernel_size in (3, 5):
+            for kernel_type in ['sobel', 'laplacian']:
+                loss = flaxsr.get('losses', 'edge', reduce=reduce, kernel_size=kernel_size, kernel_type=kernel_type)
+
+                if jit:
+                    loss = jax.jit(loss)
+
+                loss = loss(self.sr, self.hr)
+
+                if reduce == 'none':
+                    self.assertEqual(loss.shape, (16, ))
+                else:
+                    self.assertEqual(loss.shape, ())
+
+                np.not_equal(np.zeros(()), np.sum(loss))
 
 
 if __name__ == '__main__':

@@ -17,7 +17,7 @@ from flaxsr._utils import register
 
 @partial(jax.jit, static_argnums=(3,))
 def l1_loss(
-        hr: jnp.ndarray, sr: jnp.ndarray, mask: Optional[jnp.ndarray] = None, reduce: str | Reduce = 'mean'
+        sr: jnp.ndarray, hr: jnp.ndarray, mask: Optional[jnp.ndarray] = None, reduce: str | Reduce = 'mean'
 ) -> jnp.ndarray:
     hr, sr = apply_mask(hr, sr, mask=mask)
     loss = jnp.abs(hr - sr)
@@ -29,13 +29,13 @@ class L1Loss(Loss):
     def __init__(self, reduce: str | Reduce = 'mean'):
         super().__init__(reduce=reduce)
 
-    def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
-        return l1_loss(hr, sr, mask=mask, reduce=self.reduce)
+    def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
+        return l1_loss(sr, hr, mask=mask, reduce=self.reduce)
 
 
 @partial(jax.jit, static_argnums=(3,))
 def l2_loss(
-        hr: jnp.ndarray, sr: jnp.ndarray, mask: Optional[jnp.ndarray] = None, reduce: str | Reduce = 'mean'
+        sr: jnp.ndarray, hr: jnp.ndarray, mask: Optional[jnp.ndarray] = None, reduce: str | Reduce = 'mean'
 ) -> jnp.ndarray:
     hr, sr = apply_mask(hr, sr, mask=mask)
     loss = jnp.square(hr - sr)
@@ -47,13 +47,13 @@ class L2Loss(Loss):
     def __init__(self, reduce: str | Reduce = 'mean'):
         super().__init__(reduce)
 
-    def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
-        return l2_loss(hr, sr, mask=mask, reduce=self.reduce)
+    def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
+        return l2_loss(sr, hr, mask=mask, reduce=self.reduce)
 
 
 @partial(jax.jit, static_argnums=(4,))
 def charbonnier_loss(
-        hr: jnp.ndarray, sr: jnp.ndarray, eps: float = 1e-3, mask: Optional[jnp.ndarray] = None,
+        sr: jnp.ndarray, hr: jnp.ndarray,  eps: float = 1e-3, mask: Optional[jnp.ndarray] = None,
         reduce: str | Reduce = 'mean'
 ) -> jnp.ndarray:
     hr, sr = apply_mask(hr, sr, mask=mask)
@@ -67,5 +67,5 @@ class CharbonnierLoss(Loss):
         super().__init__(reduce)
         self.eps = eps
 
-    def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
-        return charbonnier_loss(hr, sr, self.eps, mask, self.reduce)
+    def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
+        return charbonnier_loss(sr, hr, self.eps, mask, self.reduce)

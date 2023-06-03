@@ -17,7 +17,7 @@ from flaxsr._utils import register
 
 @partial(jax.jit, static_argnums=(2, 3,))
 def minmax_discriminator_loss(
-        true: jnp.ndarray, fake: jnp.ndarray, from_logits: bool = True, reduce: str | Reduce = 'mean',
+        fake: jnp.ndarray, true: jnp.ndarray, from_logits: bool = True, reduce: str | Reduce = 'mean',
         *args, **kwargs
 ):
     if from_logits:
@@ -50,8 +50,8 @@ class MinmaxDiscriminatorLoss(Loss):
         super().__init__(reduce)
         self.from_logits = from_logits
 
-    def __call__(self, true: jnp.ndarray, fake: jnp.ndarray, *args, **kwargs):
-        return minmax_discriminator_loss(true, fake, self.from_logits, self.reduce)
+    def __call__(self, fake: jnp.ndarray, true: jnp.ndarray, *args, **kwargs):
+        return minmax_discriminator_loss(fake, true, self.from_logits, self.reduce)
 
 
 @register('losses', 'minmax_generator')
@@ -66,7 +66,7 @@ class MinmaxGeneratorLoss(Loss):
 
 @partial(jax.jit, static_argnums=(2, 3,))
 def least_square_discriminator_loss(
-        true: jnp.ndarray, fake: jnp.ndarray, from_logits: bool = True, reduce: str | Reduce = 'mean',
+        fake: jnp.ndarray, true: jnp.ndarray, from_logits: bool = True, reduce: str | Reduce = 'mean',
         *args, **kwargs
 ):
     if from_logits:
@@ -99,8 +99,8 @@ class LeastSquareDiscriminatorLoss(Loss):
         super().__init__(reduce)
         self.from_logits = from_logits
 
-    def __call__(self, true: jnp.ndarray, fake: jnp.ndarray, *args, **kwargs):
-        return least_square_discriminator_loss(true, fake, self.from_logits, self.reduce)
+    def __call__(self, fake: jnp.ndarray, true: jnp.ndarray, *args, **kwargs):
+        return least_square_discriminator_loss(fake, true, self.from_logits, self.reduce)
 
 
 @register('losses', 'least_square_generator')
@@ -115,7 +115,7 @@ class LeastSquareGeneratorLoss(Loss):
 
 @partial(jax.jit, static_argnums=(2,))
 def relativistic_discriminator_loss(
-        true: jnp.ndarray, fake: jnp.ndarray, reduce: str | Reduce = 'mean',
+        fake: jnp.ndarray, true: jnp.ndarray, reduce: str | Reduce = 'mean',
         *args, **kwargs
 ):
     true_loss = -jax.nn.log_sigmoid(true - jnp.mean(fake))
@@ -127,7 +127,7 @@ def relativistic_discriminator_loss(
 
 @partial(jax.jit, static_argnums=(2,))
 def relativistic_generator_loss(
-        true: jnp.ndarray, fake: jnp.ndarray, reduce: str | Reduce = 'mean',
+        fake: jnp.ndarray, true: jnp.ndarray, reduce: str | Reduce = 'mean',
         *args, **kwargs
 ):
     true_loss = -jax.nn.log_sigmoid(-true + jnp.mean(fake))
@@ -142,8 +142,8 @@ class RelativisticDiscriminatorLoss(Loss):
     def __init__(self, reduce: str | Reduce = 'mean'):
         super().__init__(reduce)
 
-    def __call__(self, true: jnp.ndarray, fake: jnp.ndarray, *args, **kwargs):
-        return relativistic_discriminator_loss(true, fake, self.reduce)
+    def __call__(self, fake: jnp.ndarray, true: jnp.ndarray, *args, **kwargs):
+        return relativistic_discriminator_loss(fake, true, self.reduce)
 
 
 @register('losses', 'relativistic_generator')
@@ -151,5 +151,5 @@ class RelativisticGeneratorLoss(Loss):
     def __init__(self, reduce: str | Reduce = 'mean'):
         super().__init__(reduce)
 
-    def __call__(self, true: jnp.ndarray, fake: jnp.ndarray, *args, **kwargs):
-        return relativistic_generator_loss(true, fake, self.reduce)
+    def __call__(self, fake: jnp.ndarray, true: jnp.ndarray, *args, **kwargs):
+        return relativistic_generator_loss(fake, true, self.reduce)

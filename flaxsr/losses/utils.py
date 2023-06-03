@@ -102,10 +102,10 @@ class LossWrapper:
         self.losses = losses
         self.weights = weights
 
-    def __call__(self, hr: jnp.ndarray, sr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
+    def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
         loss = jnp.zeros(())
 
         for loss_fn, weight in zip(self.losses, self.weights):
-            loss += weight * loss_fn(hr, sr, mask)
+            loss += weight * loss_fn(sr, hr, mask)
 
         return loss

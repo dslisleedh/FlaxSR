@@ -24,11 +24,18 @@ from .adversarial_losses import (
     RelativisticDiscriminatorLoss as RelativisticDiscriminatorLoss,
     RelativisticGeneratorLoss as RelativisticGeneratorLoss,
 )
+from .regularization_losses import (
+    Kernel as Kernel,
+    total_variation_loss as total_variation_loss,
+    TotalVariationLoss as TotalVariationLoss,
+    frequency_reconstruction_loss as frequency_reconstruction_loss,
+    FrequencyReconstructionLoss as FrequencyReconstructionLoss,
+    edge_loss as edge_loss,
+    EdgeLoss as EdgeLoss,
+)
 from .utils import (
     check_vgg_params_exists as check_vgg_params_exists,
     load_vgg19_params as load_vgg19_params,
-    # get_loss_wrapper as get_loss_wrapper,
-    # compute_loss as compute_loss,
     Reduce as Reduces,
     LossWrapper as LossWrapper,
 )

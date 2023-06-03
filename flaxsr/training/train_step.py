@@ -25,7 +25,7 @@ def discriminative_train_step(state: TrainState, batch: Sequence[jnp.ndarray]) -
 
     def loss_fn(params):
         _sr = state.apply_fn(params, lr)
-        _loss = state.losses(hr, _sr, mask if len(batch) == 3 else None)
+        _loss = state.losses(_sr, hr, mask if len(batch) == 3 else None)
         return _loss, _sr
 
     grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
