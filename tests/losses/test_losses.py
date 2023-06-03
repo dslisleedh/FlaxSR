@@ -371,7 +371,7 @@ class TestRegularizationLoss(parameterized.TestCase):
         loss = loss(self.sr, self.hr)
 
         if reduce == 'none':
-            self.assertEqual(loss.shape, (16,))
+            self.assertEqual(loss.shape, (16, 32, 17, 3))
         else:
             self.assertEqual(loss.shape, ())
 
@@ -389,7 +389,7 @@ class TestRegularizationLoss(parameterized.TestCase):
                 loss = loss(self.sr, self.hr)
 
                 if reduce == 'none':
-                    self.assertEqual(loss.shape, (16, ))
+                    self.assertEqual(loss.shape, (16, 32, 32, 3))
                 else:
                     self.assertEqual(loss.shape, ())
 

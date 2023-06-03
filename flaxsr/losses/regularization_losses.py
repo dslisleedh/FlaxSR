@@ -22,7 +22,7 @@ class Kernel(Enum):
 
 
 @partial(jax.jit, static_argnums=(1,))
-def total_variation_loss(x: jnp.ndarray, reduce: str | Reduce = 'mean') -> jnp.ndarray:
+def total_variation_loss(x: jnp.ndarray, reduce: str | Reduce = 'sum') -> jnp.ndarray:
     """
     Not include eps in the loss function. You should multipy eps after the loss function.
     """
@@ -35,7 +35,7 @@ def total_variation_loss(x: jnp.ndarray, reduce: str | Reduce = 'mean') -> jnp.n
 
 @register('losses', 'tv')
 class TotalVariationLoss(Loss):
-    def __init__(self, reduce: str | Reduce = 'mean'):
+    def __init__(self, reduce: str | Reduce = 'sum'):
         super().__init__(reduce)
 
     def __call__(self, x: jnp.ndarray, *args, **kwargs) -> jnp.ndarray:
@@ -47,7 +47,7 @@ def frequency_reconstruction_loss(sr: jnp.ndarray, hr: jnp.ndarray, reduce: str 
     hr_frequency = jnp.fft.rfft2(hr, axes=(1, 2))
     sr_frequency = jnp.fft.rfft2(sr, axes=(1, 2))
 
-    loss = jnp.mean(jnp.abs(hr_frequency - sr_frequency), axis=(1, 2, 3))
+    loss = jnp.abs(hr_frequency - sr_frequency)
     return reduce_fn(loss, reduce)
 
 
@@ -164,7 +164,7 @@ def edge_loss(
     else:
         raise ValueError(f'kernel_type must be sobel or laplacian, but got {kernel_type}')
 
-    loss = jnp.mean(jnp.abs(sr_filtered - hr_filtered), axis=(1, 2, 3))
+    loss = jnp.abs(sr_filtered - hr_filtered)
     return reduce_fn(loss, reduce)
 
 

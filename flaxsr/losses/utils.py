@@ -42,14 +42,19 @@ def reduce_fn(loss, reduce: str | Reduce) -> jnp.ndarray:
     if isinstance(reduce, str):
         reduce = Reduce(reduce)
 
+    reduce_axis = tuple(range(1, len(loss.shape)))
+
     if reduce == Reduce.SUM:
-        return jnp.sum(loss)
+        stat = jnp.sum(loss, axis=reduce_axis)
     elif reduce == Reduce.MEAN:
-        return jnp.mean(loss)
+        stat = jnp.mean(loss, axis=reduce_axis)
     elif reduce == Reduce.NONE:
         return loss
     else:
         raise ValueError(f"Unknown reduce type {reduce}")
+
+    stat = jnp.mean(stat)
+    return stat
 
 
 def apply_mask(*args, mask: Optional[jnp.ndarray]) -> tuple[jnp.ndarray, ...]:
