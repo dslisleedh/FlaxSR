@@ -6,7 +6,7 @@ setuptools.setup(
     version="0.0.6",
     author="dslisleedh",
     author_email="dslisleedh@gmail.com",
-    description="Super Resolution models with Jax/Flax",
+    description="Super Resolution tools with Jax/Flax",
     long_description=open('README.md', 'rt').read(),
     long_description_content_type="text/markdown",
     url="https://github.com/dslisleedh/FlaxSR",
