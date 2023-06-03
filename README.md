@@ -48,11 +48,39 @@ np.not_equal(state_new.params['params']['Conv_0']['kernel'], state.params['param
 ```
 
 
-## Models implemented
- - SRCNN
- - FSRCNN
- - ESPCN
- - VDSR
- - EDSR, MDSR,
- - NCNet
- - SRResNet(SRGAN will be implemented in future)
+## flaxsr.get keywords
+ - models
+   - SRCNN: srcnn
+   - FSRCNN: fsrcnn
+   - ESPCN: espcn
+   - VDSR: vdsr
+   - EDSR: edsr
+   - MDSR: mdsr
+   - SRResNet: srresnet
+   - SRGAN: srgan
+   - NCNet: ncnet
+   
+ - losses
+   - L1Loss: l1
+   - L2Loss: l2
+   - CharbonnierLoss: charbonnier
+   - VGGLoss: vgg
+   - MinmaxDriscriminatorLoss: minmax_discriminator
+   - MinmaxGeneratorLoss: minmax_generator
+   - LeastSquareDiscriminatorLoss: least_square_discriminator
+   - LeastSquareGeneratorLoss: least_square_generator
+   - RelativisticDiscriminatorLoss: relativistic_discriminator
+   - RelativisticGeneratorLoss: relativistic_generator
+   - TotalVariationLoss: tv
+   - FrequencyReconstructionLoss: freq_recon
+   - EdgeLoss: edge
+   
+ - layers
+   - DropPath: droppath
+   - DropPathFast: droppath_fast
+   - PixelShuffle: pixelshuffle
+   - NearestConv: nearestconv
+ 
+ - train_step
+   - discriminative_train_step: discriminative
+ 
