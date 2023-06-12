@@ -113,13 +113,17 @@ class LeastSquareGeneratorLoss(Loss):
         return least_square_generator_loss(fake, self.from_logits, self.reduce)
 
 
+def d_ra(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+    return x - jnp.mean(y)
+
+
 @partial(jax.jit, static_argnums=(2,))
 def relativistic_discriminator_loss(
         fake: jnp.ndarray, true: jnp.ndarray, reduce: str | Reduce = 'mean',
         *args, **kwargs
 ):
-    true_loss = -jax.nn.log_sigmoid(true - jnp.mean(fake))
-    fake_loss = -jax.nn.log_sigmoid(-fake + jnp.mean(true))
+    true_loss = -jax.nn.log_sigmoid(d_ra(true, fake))
+    fake_loss = -jnp.log(1. - jax.nn.sigmoid(d_ra(fake, true)))
 
     loss = true_loss + fake_loss
     return reduce_fn(loss, reduce)
@@ -130,8 +134,8 @@ def relativistic_generator_loss(
         fake: jnp.ndarray, true: jnp.ndarray, reduce: str | Reduce = 'mean',
         *args, **kwargs
 ):
-    true_loss = -jax.nn.log_sigmoid(-true + jnp.mean(fake))
-    fake_loss = -jax.nn.log_sigmoid(fake - jnp.mean(true))
+    true_loss = -jax.log(1. - jax.nn.sigmoid(d_ra(true, fake)))
+    fake_loss = -jax.nn.log_sigmoid(d_ra(fake, true))
 
     loss = true_loss + fake_loss
     return reduce_fn(loss, reduce)
