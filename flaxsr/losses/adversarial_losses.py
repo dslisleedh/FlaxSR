@@ -134,7 +134,7 @@ def relativistic_generator_loss(
         fake: jnp.ndarray, true: jnp.ndarray, reduce: str | Reduce = 'mean',
         *args, **kwargs
 ):
-    true_loss = -jax.log(1. - jax.nn.sigmoid(d_ra(true, fake)))
+    true_loss = -jnp.log(1. - jax.nn.sigmoid(d_ra(true, fake)))
     fake_loss = -jax.nn.log_sigmoid(d_ra(fake, true))
 
     loss = true_loss + fake_loss
