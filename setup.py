@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="flaxsr",
-    version="0.0.6",
+    version="0.0.7",
     author="dslisleedh",
     author_email="dslisleedh@gmail.com",
     description="Super Resolution tools with Jax/Flax",
@@ -27,7 +27,8 @@ setuptools.setup(
         "einops",
         "tensorflow",
         "numpy",
-        "optax"
+        "optax",
+        "tqdm"
     ],
     packages=setuptools.find_packages(),
     python_requires=">=3.6",
