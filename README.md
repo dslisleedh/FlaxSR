@@ -2,6 +2,8 @@
 
 Super Resolution models with Jax/Flax
 
+<b>Currently, Flax is using CUDA/CuDNN from wheel, but TensorFlow is using local CUDA/CuDNN, which is causing conflicts. We will fix it as soon as possible.<\b>
+
 ## HOW TO USE
 
 ### Install
