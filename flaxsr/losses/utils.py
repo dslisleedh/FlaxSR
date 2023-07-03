@@ -75,7 +75,11 @@ def check_vgg_params_exists():
     if not state:
         print('VGG19 weights not found !!!')
         print('Downloading VGG19 weights ...')
+        # To prevent errors when using jax and tensorflow together
+        a = jnp.ones((1,))
+        del a
         import tensorflow as tf
+        tf.config.set_visible_devices([], 'GPU')
         vgg19 = tf.keras.applications.VGG19(include_top=False, weights='imagenet')
         weights = []
         for layer in vgg19.layers:
