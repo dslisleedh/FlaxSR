@@ -59,6 +59,12 @@ np.not_equal(state_new.params['params']['Conv_0']['kernel'], state.params['param
    - SRResNet: srresnet
    - SRGAN: srgan
    - NCNet: ncnet
+   - ESRGAN: esrgan
+   - MEMNet: memnet
+   - RDN: rdn
+   - DRRN: drrn
+   - RCAN: rcan
+   - SAFMN: safmn
    
  - losses
    - L1Loss: l1
@@ -80,7 +86,3 @@ np.not_equal(state_new.params['params']['Conv_0']['kernel'], state.params['param
    - DropPathFast: droppath_fast
    - PixelShuffle: pixelshuffle
    - NearestConv: nearestconv
- 
- - train_step
-   - discriminative_train_step: discriminative
- 
