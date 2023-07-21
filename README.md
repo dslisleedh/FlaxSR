@@ -1,6 +1,6 @@
 # FlaxSR
 
-Super Resolution models with Jax/Flax
+Super Resolution tools with Jax/Flax
 
 ## HOW TO USE
 
@@ -27,7 +27,7 @@ model = flaxsr.get("models", "vdsr", **model_kwargs)  # This equals flaxsr.model
 losses = [
     flaxsr.losses.L1Loss(reduce='sum'),
     flaxsr.get('losses', 'vgg', feats_from=(6, 8, 14,), before_act=False, reduce='mean')
-]
+]  
 loss_weights = (.1, 1.)
 loss_wrapper = flaxsr.losses.LossWrapper(losses, loss_weights)
 params = model.init(jax.random.PRNGKey(0), jnp.ones((1, 8, 8, 3), dtype=jnp.float32))
@@ -41,7 +41,7 @@ hr = jnp.ones((1, 32, 32, 3), dtype=jnp.float32)
 lr = jnp.ones((1, 8, 8, 3), dtype=jnp.float32)
 batch = (lr, hr)
 
-state_new, loss = flaxsr.training.discriminative_train_step(state, batch)
+state_new, loss = flaxsr.training.discriminative_train_step(state, batch)  # TODO: Fix This
 
 assert state_new.step == 1
 np.not_equal(state_new.params['params']['Conv_0']['kernel'], state.params['params']['Conv_0']['kernel'])

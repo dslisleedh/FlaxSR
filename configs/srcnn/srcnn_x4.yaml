@@ -1,0 +1,19 @@
+model:
+  name: srcnn
+  n_filters:
+    - 64
+    - 64
+  scale: 4
+
+optimizer:
+  name: sgd
+  learning_rate: 1e-3
+
+loss:
+  name: l2
+
+train_size:
+  - 1
+  - 48
+  - 48
+  - 3

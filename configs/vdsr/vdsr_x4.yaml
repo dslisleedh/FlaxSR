@@ -1,0 +1,34 @@
+# Not following the same structure as the original VDSR implementation.
+
+model:
+  name: vdsr
+  n_filters: 48
+  n_blocks: 32
+  scale: 4
+
+optimizer:
+  name: adam
+  learning_rate:
+    name: warmup_cosine_decay_schedule
+    init_value: 1e-4
+    peak_value: 1e-2
+    warmup_steps: 10000
+    decay_steps: 100000
+
+loss:
+  - name: l1
+  - name: vgg
+    feats_from:
+      - 5
+      - 7
+      - 13
+    before_act: False
+loss_weight:
+  - 10.
+  - 1e-2
+
+train_size:
+  - 1
+  - 48
+  - 48
+  - 3

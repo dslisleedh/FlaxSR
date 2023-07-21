@@ -28,7 +28,8 @@ setuptools.setup(
         "tensorflow",
         "numpy",
         "optax",
-        "tqdm"
+        "tqdm",
+        "omegaconf"
     ],
     packages=setuptools.find_packages(),
     python_requires=">=3.6",

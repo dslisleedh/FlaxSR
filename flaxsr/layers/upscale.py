@@ -14,7 +14,7 @@ from typing import Sequence, Literal, Optional
 
 
 def _pixel_shuffle(inputs: jnp.ndarray, scale: int) -> jnp.ndarray:
-    output = einops.rearrange(inputs, 'b (h s1) (w s2) c -> b h w (s1 s2 c)', s1=scale, s2=scale)
+    output = einops.rearrange(inputs, 'b h w (s1 s2 c) -> b (h s1) (w s2) c', s1=scale, s2=scale)
     return output
 
 

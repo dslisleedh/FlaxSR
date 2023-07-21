@@ -20,14 +20,19 @@ from flaxsr._utils import get
 
 
 class Reduce(Enum):
+    """
+    Reduces exists to get statistics from spatial dimensions
+    So, losses not calculated by pixel-wises like perceptual loss
+    or not having spatial dimensions like total variation, This enum is not needed and has no effect
+    """
     SUM = 'sum'
     MEAN = 'mean'
     NONE = 'none'
 
 
 class Loss(ABC):
-    def __init__(self, reduce: str | Reduce = 'mean'):
-        self.reduce = reduce
+    def __init__(self, reduce: str | Reduce = Reduce.MEAN):
+        self.reduce = reduce if isinstance(reduce, Reduce) else Reduce(reduce)
 
     @abstractmethod
     def __call__(self, *args, **kwargs) -> jnp.ndarray:
@@ -39,10 +44,7 @@ class Loss(ABC):
 
 
 def reduce_fn(loss, reduce: str | Reduce) -> jnp.ndarray:
-    if isinstance(reduce, str):
-        reduce = Reduce(reduce)
-
-    reduce_axis = tuple(range(1, len(loss.shape)))
+    reduce_axis = tuple(range(1, len(loss.shape) - 1))  # (1, 2) for (B, H, W, C). Exclude batch and channel dim
 
     if reduce == Reduce.SUM:
         stat = jnp.sum(loss, axis=reduce_axis)
@@ -53,7 +55,7 @@ def reduce_fn(loss, reduce: str | Reduce) -> jnp.ndarray:
     else:
         raise ValueError(f"Unknown reduce type {reduce}")
 
-    stat = jnp.mean(stat)
+    stat = jnp.mean(stat)  # Reduce batch and channel dim
     return stat
 
 
@@ -63,7 +65,7 @@ def apply_mask(*args, mask: Optional[jnp.ndarray]) -> tuple[jnp.ndarray, ...]:
     return tuple(arg * mask for arg in args)
 
 
-def _get_package_dir():
+def _get_package_dir() -> str:
     current_file = os.path.realpath(__file__)
     return os.path.dirname(current_file)
 
@@ -94,14 +96,14 @@ def check_vgg_params_exists():
         print('Done !')
 
 
-def load_vgg19_params():
+def load_vgg19_params() -> list[tuple[jnp.ndarray, jnp.ndarray]]:
     dir_path = _get_package_dir()
     params = pickle.load(open(os.path.join(dir_path, 'vgg19_weights.pkl'), 'rb'))
     return params
 
 
 class LossWrapper:
-    def __init__(self, losses: Sequence[Loss], weights: Sequence[float]):
+    def __init__(self, losses: Sequence[Loss], weights: Sequence[float] | float = 1.0):
         # Prevent user from using None with others(Sum, Mean)
         reduces = [loss.reduce for loss in losses]
         assert all(True if reduce in ['none', Reduce.NONE] else False for reduce in reduces) or \
@@ -109,7 +111,11 @@ class LossWrapper:
             f'Cannot use None with others(Sum, Mean), got {reduces}'
 
         self.losses = losses
+        if not isinstance(weights, Sequence):
+            weights = [weights] * len(losses)
         self.weights = weights
+        assert len(self.losses) == len(self.weights),\
+            f'Length of losses and weights must be equal, got {len(self.losses)} and {len(self.weights)}'
 
     def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
         loss = jnp.zeros(())

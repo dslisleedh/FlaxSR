@@ -9,6 +9,12 @@ from .edsr import (
 from .ncnet import NCNet as NCNet
 from .srgan import (
     SRResNet as SRResNet,
-    # SRGAN as SRGAN,  will be added in the future
+    SRGAN as SRGAN,
 )
+from .esrgan import ESRGAN as ESRGAN
 # from .nafssr import NAFSSR  Temporarily removed for debugging
+from .memnet import MEMNet as MEMNet
+from .rdn import RDN as RDN
+from .drrn import DRRN as DRRN
+from .rcan import RCAN as RCAN
+from .safmn import SAFMN

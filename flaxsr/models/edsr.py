@@ -35,12 +35,14 @@ class Upscale(nn.Module):
     @nn.compact
     def __call__(self, inputs: jnp.ndarray) -> jnp.ndarray:
         if self.scale in [2, 3]:
-            inputs = nn.Conv(self.n_filters * self.scale ** 2, (3, 3), padding='SAME')(inputs)
+            inputs = nn.Conv(self.n_filters * (self.scale ** 2), (3, 3), padding='SAME')(inputs)
             inputs = PixelShuffle(self.scale)(inputs)
         elif self.scale == 4:
             inputs = nn.Conv(self.n_filters * 4, (3, 3), padding='SAME')(inputs)
             inputs = PixelShuffle(2)(inputs)
             inputs = nn.Conv(self.n_filters * 4, (3, 3), padding='SAME')(inputs)
+
+
             inputs = PixelShuffle(2)(inputs)
         else:
             raise ValueError(f'Invalid scale: {self.scale}, only support 2, 3, 4')

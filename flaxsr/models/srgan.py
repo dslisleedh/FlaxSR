@@ -114,8 +114,15 @@ class SRGAN(nn.Module):
         self.generator = SRResNet(**self.generator_spec)
         self.discriminator = Discriminator(**self.discriminator_spec)
 
-    def __call__(self, x: jnp.ndarray, training: bool = False) -> jnp.ndarray:
-        return self.generator(x, training=training)
+    def __call__(
+            self, x: jnp.ndarray, hr: jnp.ndarray, training: bool = False, discriminate: bool = False
+    ) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray] | jnp.ndarray:
+        sr = self.generator(x, training=training)
+        sr = jnp.clip(sr, 0, 1)
 
-    def discriminate(self, x: jnp.ndarray, training: bool = False) -> jnp.ndarray:
-        return self.discriminator(x, training=training)
+        if discriminate:
+            sr_score = self.discriminator(sr, training=training)
+            hr_score = self.discriminator(hr, training=training)
+            return sr, sr_score, hr_score
+        else:
+            return sr

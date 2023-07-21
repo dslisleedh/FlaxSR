@@ -1,0 +1,40 @@
+model:
+  name: esrgan
+  generator_spec:
+    n_filters: 64
+    gd: 32
+    n_blocks: 32
+    use_bias: True
+    use_rb: False
+    residual_scale: 0.2
+
+  discriminator_spec:
+    n_filters: 64
+
+generator_loss:
+  - name: vgg
+    feats_from: ...
+    before_act: True
+  - name: l1_loss
+  - name: relativistic_generator
+generator_loss_weight:
+  - 1.
+  - .1
+  - .5
+
+generator_optimizer:
+  name: adam
+  learning_rate: 1e-4
+  beta1: 0.9
+  beta2: 0.99
+  epsilon: 1e-8
+
+discriminator_loss:
+  - name: relativistic_discriminator
+
+discriminator_optimizer:
+  name: adam
+  learning_rate: 1e-4
+  beta1: 0.9
+  beta2: 0.99
+  epsilon: 1e-8

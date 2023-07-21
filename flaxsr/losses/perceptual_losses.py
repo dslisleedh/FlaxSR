@@ -59,9 +59,9 @@ def vgg_loss(
     sr_feats = _get_feats_from_vgg19(sr, vgg_params, before_act)
 
     loss = jnp.zeros(())
-    for i, (hr_feats, sr_feats) in enumerate(zip(hr_feats, sr_feats)):
+    for i, (hr_feat, sr_feat) in enumerate(zip(hr_feats, sr_feats)):
         if i in feats_from:
-            loss += jnp.mean((hr_feats - sr_feats) ** 2, axis=(1, 2, 3))
+            loss += jnp.mean((hr_feat - sr_feat) ** 2, axis=(1, 2, 3))
     return reduce_fn(loss, reduce)
 
 

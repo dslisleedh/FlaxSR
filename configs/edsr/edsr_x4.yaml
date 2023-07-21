@@ -1,0 +1,30 @@
+# Not following the same structure as the original EDSR implementation.
+
+model:
+  name: edsr
+  n_filters: 64
+  n_blocks: 16
+  scale: 4
+  scale_factor: .1
+
+optimizer:
+  name: adam
+  learning_rate: 1e-4
+
+loss:
+  - name: l1
+  - name: vgg
+    feats_from:
+      - 5
+      - 7
+      - 13
+    before_act: False
+loss_weight:
+  - 1
+  - 1e-2
+
+train_size:
+  - 1
+  - 48
+  - 48
+  - 3

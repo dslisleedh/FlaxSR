@@ -185,6 +185,16 @@ class TestAdversarialLoss(parameterized.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+
+
+
+
+
+
+
+
+
+
         self.hr_ones = jnp.ones((16, 1))
         self.hr_zeros = jnp.zeros((16, 1))
         self.sr_ones = jnp.ones((16, 1))
