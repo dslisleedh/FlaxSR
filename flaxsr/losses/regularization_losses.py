@@ -12,7 +12,7 @@ from functools import partial
 from typing import Sequence, Literal, Optional
 from enum import Enum
 
-from flaxsr.losses.utils import reduce_fn, Reduce, Loss, apply_mask
+from flaxsr.losses.utils import reduce_fn, Reduce, Loss
 from flaxsr._utils import register
 
 
@@ -26,11 +26,17 @@ def total_variation_loss(x: jnp.ndarray, reduce: str | Reduce = 'sum') -> jnp.nd
     """
     Not include eps in the loss function. You should multipy eps after the loss function.
     """
-    diff_h = jnp.sum(jnp.square(x[:, :-1, :, :] - x[:, 1:, :, :]), axis=(1, 2, 3))
-    diff_w = jnp.sum(jnp.square(x[:, :, :-1, :] - x[:, :, 1:, :]), axis=(1, 2, 3))
+    if reduce == 'none' or reduce == Reduce.NONE:
+        raise ValueError('reduce must be sum or mean for tv loss, but got none')
+    diff_h = reduce_fn(
+        jnp.square(x[:, :-1, :, :] - x[:, 1:, :, :]), reduce=reduce
+    )
+    diff_w = reduce_fn(
+        jnp.square(x[:, :, :-1, :] - x[:, :, 1:, :]), reduce=reduce
+    )
 
     loss = diff_h + diff_w
-    return reduce_fn(loss, reduce)
+    return loss
 
 
 @register('losses', 'tv')

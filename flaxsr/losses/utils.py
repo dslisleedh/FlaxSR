@@ -44,7 +44,7 @@ class Loss(ABC):
 
 
 def reduce_fn(loss, reduce: str | Reduce) -> jnp.ndarray:
-    reduce_axis = tuple(range(1, len(loss.shape) - 1))  # (1, 2) for (B, H, W, C). Exclude batch and channel dim
+    reduce_axis = tuple(range(1, len(loss.shape)))  # (1, 2, 3) for (B, H, W, C). Exclude batch dim
 
     if reduce == Reduce.SUM:
         stat = jnp.sum(loss, axis=reduce_axis)
@@ -55,14 +55,8 @@ def reduce_fn(loss, reduce: str | Reduce) -> jnp.ndarray:
     else:
         raise ValueError(f"Unknown reduce type {reduce}")
 
-    stat = jnp.mean(stat)  # Reduce batch and channel dim
+    stat = jnp.mean(stat)  # Reduce batch dim
     return stat
-
-
-def apply_mask(*args, mask: Optional[jnp.ndarray]) -> tuple[jnp.ndarray, ...]:
-    if mask is None:
-        return args
-    return tuple(arg * mask for arg in args)
 
 
 def _get_package_dir() -> str:
@@ -117,10 +111,10 @@ class LossWrapper:
         assert len(self.losses) == len(self.weights),\
             f'Length of losses and weights must be equal, got {len(self.losses)} and {len(self.weights)}'
 
-    def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray, mask: Optional[jnp.ndarray] = None) -> jnp.ndarray:
+    def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray) -> jnp.ndarray:
         loss = jnp.zeros(())
 
         for loss_fn, weight in zip(self.losses, self.weights):
-            loss += weight * loss_fn(sr, hr, mask)
+            loss += weight * loss_fn(sr, hr)
 
         return loss

@@ -17,7 +17,6 @@ jax.config.parse_flags_with_absl()
 
 search_space = {
     'reduce': ['none', 'mean', 'sum'],
-    'use_mask': [True, False],
     'same_input': [True, False],
     'jit': [True, False],
 }
@@ -29,7 +28,6 @@ search_space = {
     'feats_from': [(16,), (0,), (2, 5, 6), (6, 8, 14)],
     'before_act': [True, False],
     'reduce': ['mean', 'sum', 'sum'],
-    'use_mask': [True, False],
     'jit': [True, False],
     'same_input': [True, False],
 }
@@ -65,7 +63,7 @@ class TestPixelWiseLosses(parameterized.TestCase):
         self.mask = jnp.ones((1, 32, 32, 3))
 
     @parameterized.parameters(*pixel_wise_loss_search_space)
-    def test_0_l1(self, reduce, use_mask, same_input, jit):
+    def test_0_l1(self, reduce, same_input, jit):
         Loss = flaxsr.get('losses', 'l1', reduce)
         if jit:
             Loss = jax.jit(Loss)
@@ -77,8 +75,7 @@ class TestPixelWiseLosses(parameterized.TestCase):
             hr = self.hr_ones
             sr = self.sr_zeros
 
-        inp = (hr, sr) if use_mask else (hr, sr, self.mask)
-        loss = Loss(*inp)
+        loss = Loss(sr, hr)
 
         if reduce == 'none':
             self.assertEqual(loss.shape, (1, 32, 32, 3))
@@ -91,7 +88,7 @@ class TestPixelWiseLosses(parameterized.TestCase):
             np.not_equal(np.zeros(()), np.sum(loss))
 
     @parameterized.parameters(*pixel_wise_loss_search_space)
-    def test_1_l2(self, reduce, use_mask, same_input, jit):
+    def test_1_l2(self, reduce, same_input, jit):
         Loss = flaxsr.get('losses', 'l2', reduce)
         if jit:
             Loss = jax.jit(Loss)
@@ -103,8 +100,7 @@ class TestPixelWiseLosses(parameterized.TestCase):
             hr = self.hr_ones
             sr = self.sr_zeros
 
-        inp = (sr, hr) if use_mask else (sr, hr, self.mask)
-        loss = Loss(*inp)
+        loss = Loss(sr, hr)
 
         if reduce == 'none':
             self.assertEqual(loss.shape, (1, 32, 32, 3))
@@ -117,7 +113,7 @@ class TestPixelWiseLosses(parameterized.TestCase):
             np.not_equal(np.zeros(()), np.sum(loss))
 
     @parameterized.parameters(*pixel_wise_loss_search_space)
-    def test_2_charbonnier(self, reduce, use_mask, same_input, jit):
+    def test_2_charbonnier(self, reduce, same_input, jit):
         Loss = flaxsr.get('losses', 'charbonnier', .001, reduce)  # eps
         if jit:
             Loss = jax.jit(Loss)
@@ -129,8 +125,7 @@ class TestPixelWiseLosses(parameterized.TestCase):
             hr = self.hr_ones
             sr = self.sr_zeros
 
-        inp = (sr, hr) if use_mask else (sr, hr, self.mask)
-        loss = Loss(*inp)
+        loss = Loss(sr, hr)
 
         if reduce == 'none':
             self.assertEqual(loss.shape, (1, 32, 32, 3))
@@ -155,7 +150,7 @@ class TestPerceptualLoss(parameterized.TestCase):
         self.mask = jnp.ones((1, 32, 32, 3))
 
     @parameterized.parameters(*perceptual_loss_search_space)
-    def test_0_vgg(self, feats_from, before_act, reduce, use_mask, same_input, jit):
+    def test_0_vgg(self, feats_from, before_act, reduce, same_input, jit):
         Loss = flaxsr.get('losses', 'vgg', feats_from, before_act, reduce)
         if jit:
             Loss = jax.jit(Loss)
@@ -167,8 +162,7 @@ class TestPerceptualLoss(parameterized.TestCase):
             hr = self.hr_ones
             sr = self.sr_zeros
 
-        inp = (sr, hr) if use_mask else (sr, hr, self.mask)
-        loss = Loss(*inp)
+        loss = Loss(sr, hr)
 
         if reduce == 'none':
             self.assertEqual(loss.shape, (1, 32, 32, 3))
@@ -184,17 +178,6 @@ class TestPerceptualLoss(parameterized.TestCase):
 class TestAdversarialLoss(parameterized.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-
-
-
-
-
-
-
-
-
-
         self.hr_ones = jnp.ones((16, 1))
         self.hr_zeros = jnp.zeros((16, 1))
         self.sr_ones = jnp.ones((16, 1))
@@ -363,11 +346,11 @@ class TestRegularizationLoss(parameterized.TestCase):
         if jit:
             loss = jax.jit(loss)
 
-        loss = loss(self.sr)
-
         if reduce == 'none':
-            self.assertEqual(loss.shape, (16,))
+            with self.assertRaises(ValueError):
+                loss = loss(self.sr)
         else:
+            loss = loss(self.sr)
             self.assertEqual(loss.shape, ())
 
         np.not_equal(np.zeros(()), np.sum(loss))
