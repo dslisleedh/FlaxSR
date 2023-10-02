@@ -31,8 +31,9 @@ class Reduce(Enum):
 
 
 class Loss(ABC):
-    def __init__(self, reduce: str | Reduce = Reduce.MEAN):
+    def __init__(self, reduce: str | Reduce = Reduce.MEAN, weight: float = 1.):
         self.reduce = reduce if isinstance(reduce, Reduce) else Reduce(reduce)
+        self.weight = weight
 
     @abstractmethod
     def __call__(self, *args, **kwargs) -> jnp.ndarray:
@@ -97,7 +98,7 @@ def load_vgg19_params() -> list[tuple[jnp.ndarray, jnp.ndarray]]:
 
 
 class LossWrapper:
-    def __init__(self, losses: Sequence[Loss], weights: Sequence[float] | float = 1.0):
+    def __init__(self, losses: Sequence[Loss]):
         # Prevent user from using None with others(Sum, Mean)
         reduces = [loss.reduce for loss in losses]
         assert all(True if reduce in ['none', Reduce.NONE] else False for reduce in reduces) or \
@@ -105,16 +106,11 @@ class LossWrapper:
             f'Cannot use None with others(Sum, Mean), got {reduces}'
 
         self.losses = losses
-        if not isinstance(weights, Sequence):
-            weights = [weights] * len(losses)
-        self.weights = weights
-        assert len(self.losses) == len(self.weights),\
-            f'Length of losses and weights must be equal, got {len(self.losses)} and {len(self.weights)}'
 
     def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray) -> jnp.ndarray:
         loss = jnp.zeros(())
 
-        for loss_fn, weight in zip(self.losses, self.weights):
-            loss += weight * loss_fn(sr, hr)
+        for loss_fn in self.losses:
+            loss += loss_fn(sr, hr)
 
         return loss

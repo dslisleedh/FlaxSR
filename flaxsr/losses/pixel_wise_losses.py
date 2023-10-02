@@ -25,11 +25,11 @@ def l1_loss(
 
 @register('losses', 'l1')
 class L1Loss(Loss):
-    def __init__(self, reduce: str | Reduce = 'mean'):
-        super().__init__(reduce=reduce)
+    def __init__(self, reduce: str | Reduce = 'mean', weight: float = 1.):
+        super().__init__(reduce, weight)
 
     def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray) -> jnp.ndarray:
-        return l1_loss(sr, hr, reduce=self.reduce)
+        return l1_loss(sr, hr, reduce=self.reduce) * self.weight
 
 
 @partial(jax.jit, static_argnums=(2,))
@@ -42,11 +42,11 @@ def l2_loss(
 
 @register('losses', 'l2')
 class L2Loss(Loss):
-    def __init__(self, reduce: str | Reduce = 'mean'):
-        super().__init__(reduce)
+    def __init__(self, reduce: str | Reduce = 'mean', weight: float = 1.):
+        super().__init__(reduce, weight)
 
     def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray) -> jnp.ndarray:
-        return l2_loss(sr, hr, reduce=self.reduce)
+        return l2_loss(sr, hr, reduce=self.reduce) * self.weight
 
 
 @partial(jax.jit, static_argnums=(3,))
@@ -59,9 +59,9 @@ def charbonnier_loss(
 
 @register('losses', 'charbonnier')
 class CharbonnierLoss(Loss):
-    def __init__(self, eps: float = 1e-3, reduce: str | Reduce = 'mean'):
-        super().__init__(reduce)
+    def __init__(self, eps: float = 1e-3, reduce: str | Reduce = 'mean', weight: float = 1.):
+        super().__init__(reduce, weight)
         self.eps = eps
 
     def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray) -> jnp.ndarray:
-        return charbonnier_loss(sr, hr, self.eps, self.reduce)
+        return charbonnier_loss(sr, hr, self.eps, self.reduce) * self.weight

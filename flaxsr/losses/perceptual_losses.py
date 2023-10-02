@@ -67,15 +67,16 @@ def vgg_loss(
 @register('losses', 'vgg')
 class VGGLoss(Loss):
     def __init__(
-            self, feats_from: Sequence[int], before_act: bool = False, reduce: str | Reduce = 'mean'
+            self, feats_from: Sequence[int], before_act: bool = False, reduce: str | Reduce = 'mean',
+            weight: float = 1.
     ):
-        super().__init__(reduce)
+        super().__init__(reduce, weight)
         self.feats_from = feats_from
         self.before_act = before_act
         self.vgg_params = load_vgg19_params()
 
     def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray) -> jnp.ndarray:
-        return vgg_loss(sr, hr, self.vgg_params, self.feats_from, self.before_act, self.reduce)
+        return vgg_loss(sr, hr, self.vgg_params, self.feats_from, self.before_act, self.reduce) * self.weight
 
 
 """

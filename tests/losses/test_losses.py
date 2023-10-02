@@ -283,51 +283,51 @@ class TestLossWrapper(absltest.TestCase):
         weights = (.1, 1., .5)
 
         losses = [
-            flaxsr.get('losses', 'l1', 'none'),
-            flaxsr.get('losses', 'l2', 'none'),
-            flaxsr.get('losses', 'l1', 'none')
+            flaxsr.get('losses', 'l1', 'none', weight=weights[0]),
+            flaxsr.get('losses', 'l2', 'none', weight=weights[1]),
+            flaxsr.get('losses', 'l1', 'none', weight=weights[2])
         ]
-        flaxsr.losses.LossWrapper(losses, weights)
+        flaxsr.losses.LossWrapper(losses)
 
         losses = [
-            flaxsr.get('losses', 'l1', 'mean'),
-            flaxsr.get('losses', 'l2', 'mean'),
-            flaxsr.get('losses', 'l1', 'mean')
+            flaxsr.get('losses', 'l1', 'mean', weight=weights[0]),
+            flaxsr.get('losses', 'l2', 'mean', weight=weights[1]),
+            flaxsr.get('losses', 'l1', 'mean', weight=weights[2])
         ]
-        flaxsr.losses.LossWrapper(losses, weights)
+        flaxsr.losses.LossWrapper(losses)
 
         losses = [
-            flaxsr.get('losses', 'l1', 'sum'),
-            flaxsr.get('losses', 'l2', 'sum'),
-            flaxsr.get('losses', 'l1', 'sum')
+            flaxsr.get('losses', 'l1', 'sum', weight=weights[0]),
+            flaxsr.get('losses', 'l2', 'sum', weight=weights[1]),
+            flaxsr.get('losses', 'l1', 'sum', weight=weights[2])
         ]
-        flaxsr.losses.LossWrapper(losses, weights)
+        flaxsr.losses.LossWrapper(losses)
 
         losses = [
-            flaxsr.get('losses', 'l1', 'sum'),
-            flaxsr.get('losses', 'l2', 'sum'),
-            flaxsr.get('losses', 'l1', 'mean')
+            flaxsr.get('losses', 'l1', 'sum', weight=weights[0]),
+            flaxsr.get('losses', 'l2', 'sum', weight=weights[1]),
+            flaxsr.get('losses', 'l1', 'mean', weight=weights[2])
         ]
-        flaxsr.losses.LossWrapper(losses, weights)
+        flaxsr.losses.LossWrapper(losses)
 
         with self.assertRaises(AssertionError):
             losses = [
-                flaxsr.get('losses', 'l1', 'sum'),
-                flaxsr.get('losses', 'l2', 'sum'),
-                flaxsr.get('losses', 'l1', 'none')
+                flaxsr.get('losses', 'l1', 'sum', weight=weights[0]),
+                flaxsr.get('losses', 'l2', 'sum', weight=weights[1]),
+                flaxsr.get('losses', 'l1', 'none', weight=weights[2])
             ]
-            flaxsr.losses.LossWrapper(losses, weights)
+            flaxsr.losses.LossWrapper(losses)
 
     def test_discriminative_loss_calculation(self):
-        losses = [
-            flaxsr.get('losses', 'l1', 'mean'),
-            flaxsr.get('losses', 'vgg', (6, 8, 14,), False)
-        ]
         weights = (.1, 1.,)
-        loss_wrapper = flaxsr.losses.LossWrapper(losses, weights)
+        losses = [
+            flaxsr.get('losses', 'l1', 'mean', weight=weights[0]),
+            flaxsr.get('losses', 'vgg', (6, 8, 14,), False, weight=weights[1]),
+        ]
+        loss_wrapper = flaxsr.losses.LossWrapper(losses)
 
-        hr = np.ones((16, 32, 32, 3))
-        sr = np.zeros((16, 32, 32, 3))
+        hr = jnp.ones((16, 32, 32, 3))
+        sr = jnp.zeros((16, 32, 32, 3))
 
         loss = loss_wrapper(sr, hr)
         self.assertEqual(loss.shape, ())

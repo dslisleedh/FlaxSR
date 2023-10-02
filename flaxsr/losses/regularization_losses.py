@@ -41,11 +41,11 @@ def total_variation_loss(x: jnp.ndarray, reduce: str | Reduce = 'sum') -> jnp.nd
 
 @register('losses', 'tv')
 class TotalVariationLoss(Loss):
-    def __init__(self, reduce: str | Reduce = 'sum'):
-        super().__init__(reduce)
+    def __init__(self, reduce: str | Reduce = 'sum', weight: float = 1e-8):
+        super().__init__(reduce, weight)
 
     def __call__(self, x: jnp.ndarray, *args, **kwargs) -> jnp.ndarray:
-        return total_variation_loss(x, self.reduce)
+        return total_variation_loss(x, self.reduce) * self.weight
 
 
 @partial(jax.jit, static_argnums=(2,))
@@ -59,11 +59,11 @@ def frequency_reconstruction_loss(sr: jnp.ndarray, hr: jnp.ndarray, reduce: str 
 
 @register('losses', 'freq_recon')
 class FrequencyReconstructionLoss(Loss):
-    def __init__(self, reduce: str | Reduce = 'mean'):
-        super().__init__(reduce)
+    def __init__(self, reduce: str | Reduce = 'mean', weight: float = 5e-2):
+        super().__init__(reduce, weight)
 
     def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray, *args, **kwargs) -> jnp.ndarray:
-        return frequency_reconstruction_loss(hr, sr, self.reduce)
+        return frequency_reconstruction_loss(hr, sr, self.reduce) * self.weight
 
 
 def _magnitude(x: jnp.ndarray, y: jnp.ndarray, eps: float = 1e-8) -> jnp.ndarray:
@@ -177,11 +177,12 @@ def edge_loss(
 @register('losses', 'edge')
 class EdgeLoss(Loss):
     def __init__(
-            self, kernel_size: int = 3, kernel_type: str | Kernel = 'sobel', reduce: str | Reduce = 'mean'
+            self, kernel_size: int = 3, kernel_type: str | Kernel = 'sobel', reduce: str | Reduce = 'mean',
+            weight: float = 1e-2
     ):
-        super().__init__(reduce)
+        super().__init__(reduce, weight)
         self.kernel_size = kernel_size
         self.kernel_type = kernel_type
 
     def __call__(self, sr: jnp.ndarray, hr: jnp.ndarray, *args, **kwargs) -> jnp.ndarray:
-        return edge_loss(sr, hr, self.kernel_size, self.kernel_type, self.reduce)
+        return edge_loss(sr, hr, self.kernel_size, self.kernel_type, self.reduce) * self.weight

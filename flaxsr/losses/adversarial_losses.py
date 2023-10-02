@@ -46,22 +46,22 @@ def minmax_generator_loss(
 
 @register('losses', 'minmax_discriminator')
 class MinmaxDiscriminatorLoss(Loss):
-    def __init__(self, from_logits: bool = True, reduce: str | Reduce = 'mean'):
-        super().__init__(reduce)
+    def __init__(self, from_logits: bool = True, reduce: str | Reduce = 'mean', weight: float = 1.):
+        super().__init__(reduce, weight)
         self.from_logits = from_logits
 
     def __call__(self, fake: jnp.ndarray, true: jnp.ndarray, *args, **kwargs):
-        return minmax_discriminator_loss(fake, true, self.from_logits, self.reduce)
+        return minmax_discriminator_loss(fake, true, self.from_logits, self.reduce) * self.weight
 
 
 @register('losses', 'minmax_generator')
 class MinmaxGeneratorLoss(Loss):
-    def __init__(self, from_logits: bool = True, reduce: str | Reduce = 'mean'):
-        super().__init__(reduce)
+    def __init__(self, from_logits: bool = True, reduce: str | Reduce = 'mean', weight: float = 1.):
+        super().__init__(reduce, weight)
         self.from_logits = from_logits
 
     def __call__(self, fake: jnp.ndarray, *args, **kwargs):
-        return minmax_generator_loss(fake, self.from_logits, self.reduce)
+        return minmax_generator_loss(fake, self.from_logits, self.reduce) * self.weight
 
 
 @partial(jax.jit, static_argnums=(2, 3,))
@@ -95,22 +95,22 @@ def least_square_generator_loss(
 
 @register('losses', 'least_square_discriminator')
 class LeastSquareDiscriminatorLoss(Loss):
-    def __init__(self, from_logits: bool = True, reduce: str | Reduce = 'mean'):
-        super().__init__(reduce)
+    def __init__(self, from_logits: bool = True, reduce: str | Reduce = 'mean', weight: float = 1.):
+        super().__init__(reduce, weight)
         self.from_logits = from_logits
 
     def __call__(self, fake: jnp.ndarray, true: jnp.ndarray, *args, **kwargs):
-        return least_square_discriminator_loss(fake, true, self.from_logits, self.reduce)
+        return least_square_discriminator_loss(fake, true, self.from_logits, self.reduce) * self.weight
 
 
 @register('losses', 'least_square_generator')
 class LeastSquareGeneratorLoss(Loss):
-    def __init__(self, from_logits: bool = True, reduce: str | Reduce = 'mean'):
-        super().__init__(reduce)
+    def __init__(self, from_logits: bool = True, reduce: str | Reduce = 'mean', weight: float = 1.):
+        super().__init__(reduce, weight)
         self.from_logits = from_logits
 
     def __call__(self, fake: jnp.ndarray, *args, **kwargs):
-        return least_square_generator_loss(fake, self.from_logits, self.reduce)
+        return least_square_generator_loss(fake, self.from_logits, self.reduce) * self.weight
 
 
 def d_ra(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
@@ -143,17 +143,17 @@ def relativistic_generator_loss(
 
 @register('losses', 'relativistic_discriminator')
 class RelativisticDiscriminatorLoss(Loss):
-    def __init__(self, reduce: str | Reduce = 'mean'):
-        super().__init__(reduce)
+    def __init__(self, reduce: str | Reduce = 'mean', weight: float = 1.):
+        super().__init__(reduce, weight)
 
     def __call__(self, fake: jnp.ndarray, true: jnp.ndarray, *args, **kwargs):
-        return relativistic_discriminator_loss(fake, true, self.reduce)
+        return relativistic_discriminator_loss(fake, true, self.reduce) * self.weight
 
 
 @register('losses', 'relativistic_generator')
 class RelativisticGeneratorLoss(Loss):
-    def __init__(self, reduce: str | Reduce = 'mean'):
-        super().__init__(reduce)
+    def __init__(self, reduce: str | Reduce = 'mean', weight: float = 1.):
+        super().__init__(reduce, weight)
 
     def __call__(self, fake: jnp.ndarray, true: jnp.ndarray, *args, **kwargs):
-        return relativistic_generator_loss(fake, true, self.reduce)
+        return relativistic_generator_loss(fake, true, self.reduce) * self.weight
