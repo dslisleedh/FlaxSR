@@ -70,7 +70,7 @@ class CharbonnierLoss(Loss):
 @partial(jax.jit, static_argnums=(3, 6))
 def outlier_aware_loss(
         sr: jnp.ndarray, hr: jnp.ndarray, alpha: float = 0.1, p: int = 1,
-        mu: float = 1., b: float = 1., reduce: str | Reduce = 'mean'
+        mu: float = 0., b: float = 1., reduce: str | Reduce = 'mean'
 ) -> jnp.ndarray:
     if p == 1:
         delta = jnp.abs(hr - sr)
