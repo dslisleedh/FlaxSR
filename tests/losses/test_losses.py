@@ -137,6 +137,31 @@ class TestPixelWiseLosses(parameterized.TestCase):
         else:
             np.not_equal(np.zeros(()), np.sum(loss))
 
+    @parameterized.parameters(*pixel_wise_loss_search_space)
+    def test_3_outlier_aware(self, reduce, same_input, jit):
+        Loss = flaxsr.get('losses', 'outlier_aware', reduce=reduce)
+        if jit:
+            Loss = jax.jit(Loss)
+
+        if same_input:
+            hr = self.hr_ones
+            sr = self.sr_ones
+        else:
+            hr = self.hr_ones
+            sr = self.sr_zeros
+
+        loss = Loss(sr, hr)
+
+        if reduce == 'none':
+            self.assertEqual(loss.shape, (1, 32, 32, 3))
+        else:
+            self.assertEqual(loss.shape, ())
+
+        if same_input:
+            np.equal(np.zeros(()), np.sum(loss))
+        else:
+            np.not_equal(np.zeros(()), np.sum(loss))
+
 
 class TestPerceptualLoss(parameterized.TestCase):
     def __init__(self, *args, **kwargs):
