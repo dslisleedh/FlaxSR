@@ -83,7 +83,7 @@ def outlier_aware_loss(
 @register('losses', 'outlier_aware')
 class OutlierAwareLoss(Loss):
     def __init__(
-            self, alpha: float = 0.1, p: int = 1, mu: float = 1., b: float = 1.,
+            self, alpha: float = 0.1, p: int = 1, mu: float = 0., b: float = 1.,
             reduce: str | Reduce = 'mean', weight: float = 1.
     ):
         super().__init__(reduce, weight)
